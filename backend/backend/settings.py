@@ -142,3 +142,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+#Google Books API Key
+GOOGLE_BOOKS_API_KEY = "AIzaSyBWSl7rKgKMR6QOz1lOCCAnx9eUKW2f7rU"
