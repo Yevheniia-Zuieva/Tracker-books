@@ -9,8 +9,11 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,11 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+DEBUG = os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -41,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'corsheaders',
+    'django.contrib.sites',
 ]
 
 # Використовуємо власну модель користувача
@@ -92,9 +95,6 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-   # {
-    #    'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-   # },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
@@ -115,6 +115,22 @@ AUTH_PASSWORD_VALIDATORS = [
 DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': True,  # підтвердження пароля
     'LOGIN_FIELD': 'email',
+    
+    'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
+    'SEND_CONFIRMATION_EMAIL': True,
+    'SET_USERNAME_RETYPE': True,
+    'SET_PASSWORD_RETYPE': True,
+
+    'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}', # шаблон посилання для "Забули пароль"
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,
+    'SERIALIZERS': {},
+
+    'EMAIL': {
+        'password_reset': 'tracker.email.CustomPasswordResetEmail',
+    },
 }
 
 REST_FRAMEWORK = {
@@ -150,4 +166,22 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 #Google Books API Key
-GOOGLE_BOOKS_API_KEY = "AIzaSyBWSl7rKgKMR6QOz1lOCCAnx9eUKW2f7rU"
+GOOGLE_BOOKS_API_KEY = os.getenv('GOOGLE_BOOKS_API_KEY')
+
+#  НАЛАШТУВАННЯ EMAIL 
+
+# Лист в терміналі
+#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = os.getenv('EMAIL_USER')
+
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
+
+DEFAULT_FROM_EMAIL = 'Tracker Books <noreply@trackerbooks.com>'
+
+SITE_ID = 1
