@@ -1,16 +1,36 @@
-# Node.js
+# Node.js / React
 node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+.eslintcache
 
 # Python
 venv/
+.venv/
+env/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+*.log
 
 # Environment variables
 .env
+.env.*
 
 # Local database
 db.sqlite3
+db.sqlite3-journal
 
 # OS files
 .DS_Store
+.vscode/
+.idea/
+Thumbs.db
+*.swp
+*.swo
