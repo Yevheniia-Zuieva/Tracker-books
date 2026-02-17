@@ -10,6 +10,10 @@
     <meta property="og:title" content="Бакалаврська робота | Tracker Books">
     <meta property="og:description" content="Вебплатформа для моніторингу читацької активності">
     
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://Yevheniia-Zuieva.github.io/Tracker-books/landing/">
+    <meta property="og:image" content="https://Yevheniia-Zuieva.github.io/Tracker-books/landing/assets/og-image.png">
+   
     <title>Бакалаврська робота | Tracker Books</title>
 
     <link rel="icon" type="image/x-icon" href="assets/favicons/favicon.ico">
@@ -18,10 +22,25 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
 
     <link rel="stylesheet" href="style.css">
+
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Tracker Books",
+    "operatingSystem": "Web",
+    "applicationCategory": "BooksApplication",
+    "author": {
+        "@type": "Person",
+        "name": "Yevheniia Zuieva"
+    },
+    "description": "Інформаційна система обліку прочитаних книжок для персоналізованого моніторингу читацької активності."
+    }
+</script>
 </head>
 <body>
-    <header>
-        <nav>
+    <header role="banner">
+        <nav aria-label="Головна навігація">
             <ul>
                 <li><a href="#about">Про роботу</a></li>
                 <li><a href="#stack">Технології</a></li>
@@ -34,11 +53,23 @@
         </nav>
     </header>
 
-    <main>
-        <section id="hero">
-            <h1>Розробка вебплатформи "Tracker Books"</h1>
+    <main role="main">
+        <section id="hero" aria-labelledby="hero-title">
+            <h1 id="hero-title">Розробка вебплатформи "Tracker Books"</h1>
             <p>Ця сторінка є частиною бакалаврської роботи студентки Сумського державного університету</p>
+            <img src="assets/og-image.png" alt="Візуалізація інтерфейсу головної сторінки системи Tracker Books" style="max-width: 100%; height: auto;">
         </section>
+
+        <section id="about" aria-labelledby="about-title">
+            <h2 id="about-title">Про роботу</h2>
+            <p>Інформаційна система для персоналізованого моніторингу читацької активності.</p>
+        </section>
+
+        <section id="stack" aria-labelledby="stack-title">
+            <h2 id="stack-title">Технології</h2>
+            <p>Використаний стек розробки: <strong>Django (Python)</strong> та <strong>React</strong>.</p>
+        </section>
+        
     </main>
 
     <footer>
