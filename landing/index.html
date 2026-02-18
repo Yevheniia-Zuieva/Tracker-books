@@ -41,9 +41,13 @@
 <body>
     <header role="banner">
         <div class="header-container">
-            <div class="logo">
-                <img src="assets/ssu.png" alt="Логотип СумДУ" class="uni-logo-header">
+            <div class="logo-container">
+                <img src="assets/ssu.png" 
+                    alt="Логотип СумДУ" 
+                    class="uni-logo-header"
+                    fetchpriority="high"> 
             </div>
+
             <nav aria-label="Головна навігація">
                 <ul>
                     <li><a href="#about">Про роботу</a></li>
@@ -63,7 +67,13 @@
         <h1 id="hero-title">Інформаційна система обліку прочитаних книжок для персоналізованого моніторингу читацької активності</h1>
         <p lang="en" class="subtitle">Information System for Tracking Read Books for Personalized Monitoring of Reading Activity</p>
         <p class="description"><strong>Tracker Books</strong> – це сучасна вебплатформа для менеджменту особистої бібліотеки. Додаток допомагає організувати процес читання та аналізувати власну активність.</p>
-        <img src="assets/og-image.png" alt="Візуалізація інтерфейсу головної сторінки системи Tracker Books" style="max-width: 50%; height: auto;">
+        <div class="preview-container">
+            <img src="assets/og-image.png" 
+                alt="Візуалізація інтерфейсу головної сторінки системи Tracker Books" 
+                class="main-preview-img"
+                loading="lazy" 
+                decoding="async">
+        </div>
     </section>
 
     <section id="about" aria-labelledby="about-title">
