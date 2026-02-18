@@ -1,3 +1,13 @@
+html {
+    /* Плавна прокрутка до якорів */
+    scroll-behavior: smooth;
+    /* Запобігає зміні розміру тексту після повороту пристрою в iOS */
+    -webkit-text-size-adjust: 100%;
+    /* Покращує згладжування шрифтів */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 :root {
     --primary-color: #3b82f6;      
     --primary-dark: #1e40af;
@@ -17,6 +27,15 @@ body {
     background: linear-gradient(180deg, var(--bg-light-blue) 0%, var(--bg-white) 100%);
     background-attachment: fixed;
     min-height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
+/* Стилізація виділення тексту */
+::selection {
+    background-color: var(--primary-color);
+    color: white;
 }
 
 /* Контейнер для центрування */
@@ -101,16 +120,19 @@ section {
 
 h1 {
     color: #1e3a8a; 
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-    letter-spacing: -0.02em;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.1;
 }
 
 h2 {
     color: #1e40af;
-    margin-top: 0;
-    border-left: 4px solid var(--primary-color);
-    padding-left: 15px;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+}
+
+p, li {
+    /* Оптимальна довжина рядка для читабельності */
+    max-width: 75ch; 
+    font-size: 1.05rem;
 }
 
 /* Таблиця */
@@ -189,10 +211,77 @@ p code {
     box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.4);
 }
 
+/* Налаштування для маленького логотипа */
+.uni-logo-header {
+    height: 45px;
+    width: auto;
+    display: block;
+}
+
+/* Налаштування для великого скріншота */
+.preview-container {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.main-preview-img {
+    max-width: 50%; /* Ваше обмеження для великого зображення */
+    height: auto;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+}
+
+/* Адаптивність для скріншота на мобільних */
+@media (max-width: 768px) {
+    .main-preview-img {
+        max-width: 90%; /* На смартфонах робимо більшим для читабельності */
+    }
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    /* Запобігає розмиттю при масштабуванні */
+    font-style: italic; 
+    vertical-align: middle;
+    shape-margin: 0.75rem;
+}
+
 /* Футер */
 footer {
     text-align: center;
     padding: 3rem 0;
     color: #64748b;
     font-size: 0.9rem;
+}
+
+/* Адаптація контейнерів для дуже малих екранів (менше 480px) */
+@media (max-width: 480px) {
+    .header-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    section {
+        padding: 25px 15px; /* Менші відступи на малих екранах */
+        margin: 20px 10px;
+    }
+
+    h1 {
+        text-align: center;
+    }
+}
+
+/* Оптимізація для темної теми системних налаштувань*/
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto; /* Вимикає анімацію для користувачів, які її не люблять */
+    }
 }
