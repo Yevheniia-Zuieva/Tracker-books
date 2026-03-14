@@ -1,7 +1,6 @@
 import axios from "axios";
 
 // --- КОНФІГУРАЦІЯ API ---
-const API_URL = "http://localhost:8000";
 const API_BASE_URL = "http://localhost:8000/api";
 const AUTH_URL = "http://localhost:8000/auth";
 
@@ -51,7 +50,7 @@ export const apiAuth = {
     if (!token) throw new Error("Token missing");
     try {
       await apiAuth.getProfile();
-    } catch (error) {
+    } catch {
       throw new Error("Token validation failed");
     }
   },

@@ -119,7 +119,11 @@ class ReadingStatsAPIView(APIView):
             month_num=ExtractMonth('endDate')
         ).values('month_num').annotate(count=Count('id')).order_by('month_num')
         
-        month_map = {1: "Січень", 2: "Лютий", 3: "Березень", 4: "Квітень", 5: "Травень", 6: "Червень", 7: "Липень", 8: "Серпень", 9: "Вересень", 10: "Жовтень", 11: "Листопад", 12: "Грудень"}
+        month_map = {
+            1: "Січень", 2: "Лютий", 3: "Березень", 4: "Квітень", 
+            5: "Травень", 6: "Червень", 7: "Липень", 8: "Серпень", 
+            9: "Вересень", 10: "Жовтень", 11: "Листопад", 12: "Грудень"
+        }
         monthly_stats = [
             {'month': month_map.get(item['month_num']), 'count': item['count']}
             for item in monthly_data
