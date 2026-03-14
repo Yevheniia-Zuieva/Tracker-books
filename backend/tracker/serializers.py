@@ -1,6 +1,8 @@
-from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
-from .models import User, Book, ReadingSession, Note, Quote
+from rest_framework import serializers
+
+from .models import Book, Note, Quote, ReadingSession, User
+
 
 # 1. Створення користувача
 class UserCreateSerializer(DjoserUserCreateSerializer):

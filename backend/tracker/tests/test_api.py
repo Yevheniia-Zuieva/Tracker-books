@@ -1,10 +1,8 @@
-import json
-from rest_framework.test import APITestCase
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.utils import timezone
-from unittest.mock import patch, MagicMock
-from datetime import timedelta
+from rest_framework.test import APITestCase
 
 # Отримання моделі користувача
 User = get_user_model()

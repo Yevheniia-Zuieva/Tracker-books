@@ -1,20 +1,19 @@
-from rest_framework import viewsets, generics, status
+import re  # Для очищення даних
+
+import requests
+from django.conf import settings
+from django.db.models import Avg, Count, Sum
+from django.db.models.functions import Coalesce, ExtractMonth
+from django.utils import timezone
+from rest_framework import generics, status, viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import PermissionDenied
-from django.db.models import Count, Avg, Sum, F
-from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
-from django.utils import timezone
-from django.conf import settings
-import requests
-import re # Для очищення даних
 
-from .models import User, Book, ReadingSession, Note, Quote
-from .serializers import (
-    BookSerializer, ReadingSessionSerializer, NoteSerializer, 
-    QuoteSerializer, UserSerializer
-)
+from .models import Book, Note, Quote, ReadingSession
+from .serializers import BookSerializer, NoteSerializer, QuoteSerializer, ReadingSessionSerializer, UserSerializer
+
 
 # --- Базовий клас для фільтрації по користувачу ---
 class UserFilteredModelViewSet(viewsets.ModelViewSet):
