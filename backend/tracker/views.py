@@ -1,20 +1,19 @@
-from rest_framework import viewsets, generics, status
+import re  # Для очищення даних
+
+import requests
+from django.conf import settings
+from django.db.models import Avg, Count, Sum
+from django.db.models.functions import Coalesce, ExtractMonth
+from django.utils import timezone
+from rest_framework import generics, status, viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import PermissionDenied
-from django.db.models import Count, Avg, Sum, F
-from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
-from django.utils import timezone
-from django.conf import settings
-import requests
-import re # Для очищення даних
 
-from .models import User, Book, ReadingSession, Note, Quote
-from .serializers import (
-    BookSerializer, ReadingSessionSerializer, NoteSerializer, 
-    QuoteSerializer, UserSerializer
-)
+from .models import Book, Note, Quote, ReadingSession
+from .serializers import BookSerializer, NoteSerializer, QuoteSerializer, ReadingSessionSerializer, UserSerializer
+
 
 # --- Базовий клас для фільтрації по користувачу ---
 class UserFilteredModelViewSet(viewsets.ModelViewSet):
@@ -120,7 +119,11 @@ class ReadingStatsAPIView(APIView):
             month_num=ExtractMonth('endDate')
         ).values('month_num').annotate(count=Count('id')).order_by('month_num')
         
-        month_map = {1: "Січень", 2: "Лютий", 3: "Березень", 4: "Квітень", 5: "Травень", 6: "Червень", 7: "Липень", 8: "Серпень", 9: "Вересень", 10: "Жовтень", 11: "Листопад", 12: "Грудень"}
+        month_map = {
+            1: "Січень", 2: "Лютий", 3: "Березень", 4: "Квітень", 
+            5: "Травень", 6: "Червень", 7: "Липень", 8: "Серпень", 
+            9: "Вересень", 10: "Жовтень", 11: "Листопад", 12: "Грудень"
+        }
         monthly_stats = [
             {'month': month_map.get(item['month_num']), 'count': item['count']}
             for item in monthly_data

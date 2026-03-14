@@ -1,10 +1,8 @@
-import json
-from rest_framework.test import APITestCase
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.utils import timezone
-from unittest.mock import patch, MagicMock
-from datetime import timedelta
+from rest_framework.test import APITestCase
 
 # Отримання моделі користувача
 User = get_user_model()
@@ -126,7 +124,12 @@ class AuthAPITestCase(APITestCase):
         
         # Перевірка на типові помилки складності
         password_errors = str(response.data['password'])
-        self.assertTrue("8 characters" in password_errors or "digit" in password_errors or "uppercase" in password_errors or "symbol" in password_errors)
+        self.assertTrue(
+            "8 characters" in password_errors 
+            or "digit" in password_errors 
+            or "uppercase" in password_errors 
+            or "symbol" in password_errors
+        )
 
     def test_06_login_success(self):
         """2.1 Позитивна перевірка авторизації (отримання JWT токена)."""

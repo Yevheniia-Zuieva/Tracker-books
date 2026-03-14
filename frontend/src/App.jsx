@@ -9,7 +9,6 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 import { RequestResetPage } from "./components/RequestResetPage";
 import { ResetPasswordConfirmPage } from "./components/ResetPasswordConfirmPage";

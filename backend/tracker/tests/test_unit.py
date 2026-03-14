@@ -1,11 +1,12 @@
-from django.test import SimpleTestCase
-from unittest.mock import patch, Mock, MagicMock
-from django.utils import timezone
 import datetime
+from unittest.mock import Mock, patch
+
+from django.test import SimpleTestCase
 
 # Імпортуємо класи, які будемо тестувати
-from tracker.models import Book, User, Note, ReadingSession
-from tracker.views import ExternalSearchAPIView, ReadingStatsAPIView
+from tracker.models import Book, Note, User
+from tracker.views import ExternalSearchAPIView
+
 
 class RequirementR1_Tracking_Tests(SimpleTestCase):
     """

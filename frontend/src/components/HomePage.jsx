@@ -44,7 +44,7 @@ export function HomePage({ onBookClick }) {
 
   // 3. Логіка фільтрації
   const getFilteredBooks = () => {
-    let filtered = [...books];
+    const filtered = [...books];
 
     switch (activeCategory) {
       case "reading":

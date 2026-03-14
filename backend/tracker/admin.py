@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Book, ReadingSession, Note, Quote
+
+from .models import Book, Note, Quote, ReadingSession, User
+
 
 # Налаштування для Користувача
 class CustomUserAdmin(UserAdmin):

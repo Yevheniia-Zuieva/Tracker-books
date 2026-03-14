@@ -30,7 +30,7 @@ export function RequestResetPage() {
     try {
       await apiAuth.resetPasswordRequest(email);
       setIsSuccess(true);
-    } catch (err) {
+    } catch {
       setError("Щось пішло не так. Спробуйте пізніше.");
     } finally {
       setIsLoading(false);

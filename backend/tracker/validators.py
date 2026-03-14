@@ -1,6 +1,8 @@
 import re
+
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
+
 
 class ComplexPasswordValidator:
     """
@@ -28,5 +30,7 @@ class ComplexPasswordValidator:
 
     def get_help_text(self):
         return _(
-            "Пароль не відповідає вимогам. Пароль має бути не менше 8 символів і містити великі та малі літери, цифри, а також спеціальні символи. Будь ласка, спробуйте ще раз."
+            "Пароль не відповідає вимогам. Пароль має бути не менше 8 символів і "
+            "містити великі та малі літери, цифри, а також спеціальні символи. "
+            "Будь ласка, спробуйте ще раз."
         )
