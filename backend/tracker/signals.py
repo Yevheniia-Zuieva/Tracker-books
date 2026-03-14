@@ -10,7 +10,11 @@ User = get_user_model()
 def send_welcome_email(sender, instance, created, **kwargs):
     if created: # Перевіряємо, що це саме створення, а не редагування профілю
         subject = 'Ласкаво просимо до Tracker Books!'
-        message = f'Вітаємо, {instance.username or instance.email}!\n\nВи успішно зареєструвалися в нашому сервісі. Бажаємо приємного ведення читацького щоденника!'
+        message = (
+            f'Вітаємо, {instance.username or instance.email}!\n\n'
+            'Ви успішно зареєструвалися в нашому сервісі. '
+            'Бажаємо приємного ведення читацького щоденника!'
+        )
         
         try:
             send_mail(

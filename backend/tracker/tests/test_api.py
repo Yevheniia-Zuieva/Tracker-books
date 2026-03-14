@@ -126,7 +126,12 @@ class AuthAPITestCase(APITestCase):
         
         # Перевірка на типові помилки складності
         password_errors = str(response.data['password'])
-        self.assertTrue("8 characters" in password_errors or "digit" in password_errors or "uppercase" in password_errors or "symbol" in password_errors)
+        self.assertTrue(
+            "8 characters" in password_errors 
+            or "digit" in password_errors 
+            or "uppercase" in password_errors 
+            or "symbol" in password_errors
+        )
 
     def test_06_login_success(self):
         """2.1 Позитивна перевірка авторизації (отримання JWT токена)."""
