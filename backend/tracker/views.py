@@ -166,8 +166,10 @@ class ReadingStatsAPIView(APIView):
 # --- 7. Зовнішній пошук (ExternalSearchAPIView) ---
 class ExternalSearchAPIView(APIView):
     """
-    Проксі-сервер для Google Books API.
-    Приймає запит від фронтенду та повертає відформатовані результати.
+    Проксі-сервер для взаємодії з Google Books API.
+    
+    Забезпечує безпечний пошук книг за запитом користувача, приховуючи 
+    API-ключ на сервері та форматуючи результати для фронтенду.
     """
     permission_classes = [IsAuthenticated]
     
@@ -209,6 +211,21 @@ class ExternalSearchAPIView(APIView):
         }
 
     def get(self, request, *args, **kwargs):
+        """
+        Обробляє GET-запит для пошуку книг.
+        
+        Формує запит до Google Books API на основі переданих параметрів, 
+        отримує результати, форматує їх та повертає на клієнт.
+
+        Args:
+            request (Request): Об'єкт запиту DRF. Очікує query-параметри:
+                - q (str): Рядок пошуку.
+                - filter (str, optional): Критерій пошуку ('title', 'author', 'genre', 'all').
+
+        Returns:
+            Response: Відповідь зі статусом 200 та списком відформатованих книг
+                      або статусом 500/503 у разі помилки конфігурації/сервера.
+        """
         if not settings.GOOGLE_BOOKS_API_KEY:
             return Response(
                 {"error": "Ключ Google Books API не налаштований у settings.py."},

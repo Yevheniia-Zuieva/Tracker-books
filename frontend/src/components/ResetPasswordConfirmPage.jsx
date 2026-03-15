@@ -27,7 +27,7 @@ export function ResetPasswordConfirmPage() {
   const validatePassword = (password) => {
     // Регулярний вираз для вимоги пароля
     const regex =
-      /^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+      /^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
     return regex.test(password);
   };
 

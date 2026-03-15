@@ -6,6 +6,20 @@ import { Textarea } from "./ui/textarea";
 import { Star, Heart, FileText, Save } from "lucide-react";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
 
+/**
+ * Компонент картки книги для відображення короткої інформації та керування нотатками.
+ * * Відображає обкладинку, назву, автора, прогрес читання та дозволяє
+ * переглядати або швидко редагувати нотатку до книги.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Object} props.book - Об'єкт книги (містить id, title, author, cover, status, progress, note тощо).
+ * @param {Function} props.onBookClick - Обробник кліку по картці для відкриття детальної інформації.
+ * @param {boolean} [props.compact=false] - Прапорець для відображення картки у зменшеному (компактному) розмірі.
+ * @param {Function} [props.onNoteUpdate] - Обробник збереження оновленої нотатки (приймає id книги та текст нотатки).
+ * @returns {JSX.Element} Відмальована картка книги.
+ */
+
 export function BookCard({ book, onBookClick, compact = false, onNoteUpdate }) {
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [noteText, setNoteText] = useState(book.note || "");
