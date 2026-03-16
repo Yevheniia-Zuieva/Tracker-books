@@ -1,5 +1,4 @@
-"""
-Модуль налаштування адміністративної панелі Django для додатку tracker.
+"""Модуль налаштування адміністративної панелі Django для додатку tracker.
 Визначає, як моделі будуть відображатися, фільтруватися та редагуватися в адмінці.
 """
 from django.contrib import admin
@@ -10,10 +9,10 @@ from .models import Book, Note, Quote, ReadingSession, User
 
 # Налаштування для Користувача
 class CustomUserAdmin(UserAdmin):
-    """
-    Налаштування адміністративної панелі для кастомної моделі користувача.
+    """Налаштування адміністративної панелі для кастомної моделі користувача.
     Додає власні поля (біографія, мета, аватар) до стандартного інтерфейсу Django.
     """
+
     model = User
     # Власні поля
     fieldsets = UserAdmin.fieldsets + (
@@ -24,9 +23,8 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    """
-    Налаштування відображення моделі Книги в адміністративній панелі.
-    """
+    """Налаштування відображення моделі Книги в адміністративній панелі."""
+
     # Які колонки показувати у списку
     list_display = ('title', 'author', 'user', 'status', 'rating', 'progress')
     # Фільтри збоку 
@@ -36,38 +34,35 @@ class BookAdmin(admin.ModelAdmin):
 
 @admin.register(ReadingSession)
 class ReadingSessionAdmin(admin.ModelAdmin):
-    """
-    Налаштування відображення моделі Сесії читання в адміністративній панелі.
-    """
+    """Налаштування відображення моделі Сесії читання в адміністративній панелі."""
+
     list_display = ('book', 'date', 'duration', 'user_info')
     list_filter = ('date',)
     
     def user_info(self, obj):
-        """
-        Отримує email користувача, якому належить книга, для зручного відображення в списку.
+        """Отримує email користувача, якому належить книга, для зручного відображення в списку.
 
         Args:
             obj (ReadingSession): Екземпляр сесії читання.
 
         Returns:
             str: Email власника книги.
+
         """
         return obj.book.user.email
     user_info.short_description = 'Користувач'
 
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
-    """
-    Налаштування відображення моделі Нотатки в адміністративній панелі.
-    """
+    """Налаштування відображення моделі Нотатки в адміністративній панелі."""
+
     list_display = ('book', 'user', 'isFavorite', 'createdAt')
     list_filter = ('isFavorite', 'user')
 
 @admin.register(Quote)
 class QuoteAdmin(admin.ModelAdmin):
-    """
-    Налаштування відображення моделі Цитати в адміністративній панелі.
-    """
+    """Налаштування відображення моделі Цитати в адміністративній панелі."""
+
     list_display = ('book', 'user', 'isFavorite', 'createdAt')
     list_filter = ('isFavorite', 'user')
 

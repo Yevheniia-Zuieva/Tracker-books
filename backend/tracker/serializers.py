@@ -1,5 +1,4 @@
-"""
-Модуль містить серіалізатори для перетворення моделей бази даних
+"""Модуль містить серіалізатори для перетворення моделей бази даних
 у JSON-формат та навпаки для REST API.
 """
 from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
@@ -9,14 +8,15 @@ from .models import Book, Note, Quote, ReadingSession, User
 
 
 class UserCreateSerializer(DjoserUserCreateSerializer):
-    """
-    Серіалізатор для реєстрації нових користувачів.
+    """Серіалізатор для реєстрації нових користувачів.
 
     Розширює стандартний серіалізатор Djoser, додаючи поле підтвердження пароля.
 
     Attributes:
         re_password (CharField): Поле для підтвердження пароля (використовується лише для запису).
+
     """
+
     re_password = serializers.CharField(write_only=True)
 
     class Meta(DjoserUserCreateSerializer.Meta):
@@ -24,15 +24,16 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
         fields = ('id', 'email', 'username', 'password', 're_password')
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Серіалізатор для профілю користувача.
+    """Серіалізатор для профілю користувача.
 
     Надає дані про користувача та включає псевдонім 'status' для поля 'bio',
     щоб відповідати вимогам фронтенду (ProfilePage.tsx).
 
     Attributes:
         status (CharField): Псевдонім для поля bio (лише для читання).
+
     """
+
     status = serializers.CharField(source='bio', read_only=True) 
     
     class Meta:
@@ -41,26 +42,27 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('email', 'date_joined', 'status')
 
 class ReadingSessionSerializer(serializers.ModelSerializer):
-    """
-    Серіалізатор для сесій читання.
+    """Серіалізатор для сесій читання.
 
     Обробляє інформацію про тривалість читання та нотатки до сесії.
     """
+
     class Meta:
         model = ReadingSession
         fields = ('id', 'book', 'date', 'duration', 'note')
         read_only_fields = ('date',) 
 
 class BookSerializer(serializers.ModelSerializer):
-    """
-    Серіалізатор для книг.
+    """Серіалізатор для книг.
 
     Включає всі основні поля книги, а також вкладені сесії читання, 
     пов'язані з цією книгою.
 
     Attributes:
         readingSessions (ReadingSessionSerializer): Список пов'язаних сесій читання (лише для читання).
+
     """
+
     readingSessions = ReadingSessionSerializer(many=True, read_only=True, source='reading_sessions') 
     
     class Meta:
@@ -73,15 +75,16 @@ class BookSerializer(serializers.ModelSerializer):
         read_only_fields = ('progress',) 
 
 class NoteSerializer(serializers.ModelSerializer):
-    """
-    Серіалізатор для користувацьких нотаток до книг.
+    """Серіалізатор для користувацьких нотаток до книг.
 
     Додатково отримує назву та автора пов'язаної книги.
 
     Attributes:
         bookTitle (CharField): Назва книги (лише для читання).
         bookAuthor (CharField): Автор книги (лише для читання).
+
     """
+
     bookTitle = serializers.CharField(source='book.title', read_only=True)
     bookAuthor = serializers.CharField(source='book.author', read_only=True)
     
@@ -91,15 +94,16 @@ class NoteSerializer(serializers.ModelSerializer):
         read_only_fields = ('bookTitle', 'bookAuthor', 'createdAt')
 
 class QuoteSerializer(serializers.ModelSerializer):
-    """
-    Серіалізатор для збережених цитат із книг.
+    """Серіалізатор для збережених цитат із книг.
 
     Додатково отримує назву та автора пов'язаної книги.
 
     Attributes:
         bookTitle (CharField): Назва книги (лише для читання).
         bookAuthor (CharField): Автор книги (лише для читання).
+
     """
+
     bookTitle = serializers.CharField(source='book.title', read_only=True)
     bookAuthor = serializers.CharField(source='book.author', read_only=True)
     

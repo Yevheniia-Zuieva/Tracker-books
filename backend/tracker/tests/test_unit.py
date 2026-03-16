@@ -9,15 +9,12 @@ from tracker.views import ExternalSearchAPIView
 
 
 class RequirementR1_Tracking_Tests(SimpleTestCase):
-    """
-    Тести для вимог R1.8 - R1.9 (Відстеження прогресу)
-    """
+    """Тести для вимог R1.8 - R1.9 (Відстеження прогресу)."""
 
     # R1.8: Система повинна автоматично розрахувати відсоток прочитаного
     @patch('django.db.models.Model.save') 
     def test_R1_8_progress_calculation_overflow(self, mock_save):
-        """
-        Перевірка R1.8: Якщо користувач помилково ввів поточну сторінку більшу за загальну,
+        """Перевірка R1.8: Якщо користувач помилково ввів поточну сторінку більшу за загальну,
         прогрес не має перевищувати 100%.
         """
         book = Book(totalPages=200, currentPage=250, status='reading')
@@ -29,8 +26,7 @@ class RequirementR1_Tracking_Tests(SimpleTestCase):
     # R1.9: Можливість встановити дату завершення читання для кожної книги
     @patch('django.db.models.Model.save')
     def test_R1_9_end_date_is_not_overwritten(self, mock_save):
-        """
-        Перевірка R1.9: Якщо дата завершення ВЖЕ встановлена, система не повинна 
+        """Перевірка R1.9: Якщо дата завершення ВЖЕ встановлена, система не повинна
         її перезаписувати автоматично при повторному збереженні.
         """
         old_date = datetime.date(2020, 1, 1)
@@ -46,9 +42,7 @@ class RequirementR1_Tracking_Tests(SimpleTestCase):
 
 
 class RequirementR1_Search_Tests(SimpleTestCase):
-    """
-    Тести для вимоги R1.5 (Пошук книг)
-    """
+    """Тести для вимоги R1.5 (Пошук книг)."""
     
     def setUp(self):
         self.view = ExternalSearchAPIView()
@@ -56,9 +50,7 @@ class RequirementR1_Search_Tests(SimpleTestCase):
     # R1.5: Система повинна надавати можливість пошуку (перевірка формування запиту)
     @patch('tracker.views.requests.get')
     def test_R1_5_search_query_construction_title(self, mock_requests_get):
-        """
-        Перевірка R1.5: Чи правильно формується запит до Google API при фільтрі 'title'.
-        """
+        """Перевірка R1.5: Чи правильно формується запит до Google API при фільтрі 'title'."""
         # Створюємо фейковий реквест
         request = Mock()
         request.query_params = {'q': 'Harry Potter', 'filter': 'title'}
@@ -80,9 +72,7 @@ class RequirementR1_Search_Tests(SimpleTestCase):
     # R1.5: Пошук за автором
     @patch('tracker.views.requests.get')
     def test_R1_5_search_query_construction_author(self, mock_requests_get):
-        """
-        Перевірка R1.5: Чи правильно формується запит при фільтрі 'author'.
-        """
+        """Перевірка R1.5: Чи правильно формується запит при фільтрі 'author'."""
         request = Mock()
         request.query_params = {'q': 'Rowling', 'filter': 'author'}
         
@@ -99,14 +89,11 @@ class RequirementR1_Search_Tests(SimpleTestCase):
 
 
 class RequirementR1_Stats_Tests(SimpleTestCase):
-    """
-    Тести для вимоги R1.14 (Генерування статистики)
-    """
+    """Тести для вимоги R1.14 (Генерування статистики)."""
 
     # R1.14: Розрахунок прогресу до річної мети
     def test_R1_14_yearly_goal_math_logic(self):
-        """
-        Перевірка R1.14: Математика розрахунку відсотка виконання цілі.
+        """Перевірка R1.14: Математика розрахунку відсотка виконання цілі.
         Симулюємо логіку з ReadingStatsAPIView.
         """
         yearly_goal = 12
@@ -119,9 +106,7 @@ class RequirementR1_Stats_Tests(SimpleTestCase):
 
     # R1.14: Обробка ділення на нуль у статистиці
     def test_R1_14_yearly_goal_zero_division(self):
-        """
-        Перевірка R1.14: Якщо ціль 0, прогрес має бути 0.
-        """
+        """Перевірка R1.14: Якщо ціль 0, прогрес має бути 0."""
         yearly_goal = 0
         books_read = 5
         
@@ -132,9 +117,7 @@ class RequirementR1_Stats_Tests(SimpleTestCase):
 
     # R1.14: Середній час на книгу
     def test_R1_14_avg_time_math(self):
-        """
-        Перевірка R1.14: Розрахунок середнього часу читання книги.
-        """
+        """Перевірка R1.14: Розрахунок середнього часу читання книги."""
         total_minutes = 600 # 10 годин
         books_count = 2
         
@@ -143,24 +126,18 @@ class RequirementR1_Stats_Tests(SimpleTestCase):
 
 
 class RequirementR1_Data_Tests(SimpleTestCase):
-    """
-    Тести для вимог R1.1, R1.11 (Збереження та відображення даних)
-    """
+    """Тести для вимог R1.1, R1.11 (Збереження та відображення даних)."""
 
     # R1.1: Реєстрація з Email (Перевірка відображення User)
     def test_R1_1_user_string_representation(self):
-        """
-        Перевірка R1.1: Модель User має ідентифікуватися за email, якщо він є.
-        """
+        """Перевірка R1.1: Модель User має ідентифікуватися за email, якщо він є."""
         user = User(email="test@test.com", username="tester")
         # Перевіряємо __str__ метод без збереження в БД
         self.assertEqual(str(user), "test@test.com")
 
    # R1.11: Додавання нотаток (Note Representation)
     def test_R1_11_note_representation(self):
-        """
-        Перевірка R1.11: Коректне формування рядкового представлення нотатки.
-        """
+        """Перевірка R1.11: Коректне формування рядкового представлення нотатки."""
         # Використовуємо реальний екземпляр класу Book.
         # У SimpleTestCase створюємо об'єкти моделей у пам'яті, не викликаючи .save().
         book = Book(title="The Hobbit")

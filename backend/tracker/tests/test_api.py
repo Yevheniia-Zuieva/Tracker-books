@@ -13,10 +13,19 @@ REGISTER_URL = reverse('user-list')
 LOGIN_URL = reverse('jwt-create')      
 
 class AuthAPITestCase(APITestCase):
-    """Модульні тести для кінцевих точок авторизації."""
+    """### Модульні та інтеграційні тести API.
+    
+    Цей клас містить сценарії перевірки публічних інтерфейсів системи:
+    1. **Автентифікація та профілі** (Реєстрація, JWT-авторизація).
+    2. **Бізнес-логіка трекера** (Пошук через зовнішні API, керування бібліотекою).
+    3. **Взаємодія компонентів** (Автоматична зміна статусів).
+    """
 
     def setUp(self):
-        
+        """### Ініціалізація тестового середовища.
+        Створює тестового користувача та отримує JWT-токен для авторизованих запитів.
+        Демонструє стандартний заголовок `Authorization: Bearer <token>`.
+        """
         self.valid_password = "QA_User01!" # Валідний пароль для тестування
         
         # Створення першого користувача 
@@ -46,7 +55,10 @@ class AuthAPITestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token)
         
     def test_01_register_success(self):
-        """1.1 Позитивна перевірка реєстрації нового користувача."""
+        """**1.1 Позитивна перевірка реєстрації.**.
+        
+        **Бізнес-логіка:** Новий користувач повинен надати унікальний email та підтвердити пароль через `re_password`.
+        """
         new_user_data = {
             "username": "user02",
             "email": "user02@gmail.com",
@@ -109,7 +121,10 @@ class AuthAPITestCase(APITestCase):
         self.assertTrue(any("Enter a valid email address" in str(err) for err in response.data['email']))
 
     def test_05_register_weak_password_complexity(self):
-        """1.5 Негативна перевірка: некоректне значення паролю (слабкий пароль)."""
+        """1.5 Негативна перевірка: некоректне значення паролю (слабкий пароль).
+        **Алгоритм перевірки:** Система використовує Django Password Validation.
+        Пароль має містити мінімум 8 символів, цифри та літери різного регістру.
+        """
         data = {
             "username": "user03",
             "email": "user03@gmail.com",
@@ -164,7 +179,11 @@ class AuthAPITestCase(APITestCase):
 
     @patch('tracker.views.requests.get')
     def test_08_external_search_integration(self, mock_get):
-        """4.1 Позитивна перевірка: пошук книги через зовнішнє API (з моком)."""
+        """4.1 Позитивна перевірка: пошук книги через зовнішнє API (з моком).
+        **Архітектурне рішення:** Використання бібліотеки `requests` з механізмом Mocking.
+        Тест демонструє, як система обробляє відповіді від зовнішніх сервісів, 
+        ізолюючи внутрішню логіку від мережевих затримок.
+        """
         # Налаштовуємо Mock, щоб не робити реальний запит до Google
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -195,8 +214,10 @@ class AuthAPITestCase(APITestCase):
         """5.1 Позитивна перевірка: додавання книги до бібліотеки."""
         books_url = reverse('book-list') # 'book-list' генерується DefaultRouter
         
+        test_title = "Integration Testing 101"
+        
         new_book_data = {
-            "title": "Book Test",
+            "title": test_title,
             "author": "Author Test",
             "genre": "Education",
             "status": "want-to-read",
@@ -206,14 +227,13 @@ class AuthAPITestCase(APITestCase):
         response = self.client.post(books_url, new_book_data, format='json')
         
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['title'], "Integration Testing 101")
+        self.assertEqual(response.data['title'], test_title)
         # Перевіряємо, що книга прив'язалась до поточного юзера
         from tracker.models import Book
-        self.assertTrue(Book.objects.filter(title="Integration Testing 101", user=self.user).exists())
+        self.assertTrue(Book.objects.filter(title=test_title, user=self.user).exists())
 
     def test_10_add_session_updates_book_status(self):
-        """
-        6.6 + R1.10: Інтеграційний тест взаємодії компонентів.
+        """6.6 + R1.10: Інтеграційний тест взаємодії компонентів.
         Додавання сесії читання повинно автоматично змінювати статус книги 
         з 'want-to-read' на 'reading'.
         """

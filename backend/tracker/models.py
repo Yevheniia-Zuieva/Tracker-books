@@ -5,8 +5,7 @@ from django.utils import timezone
 
 # 1. Кастомна модель користувача (User)
 class User(AbstractUser):
-    """
-    Кастомна модель користувача, що розширює стандартну модель Django `AbstractUser`.
+    """Кастомна модель користувача, що розширює стандартну модель Django `AbstractUser`.
 
     Ця модель використовує `email` як основне поле для автентифікації замість `username`.
     Вона також містить додаткові поля профілю, такі як біографія, річна мета читання 
@@ -19,6 +18,7 @@ class User(AbstractUser):
         bio (TextField, optional): Коротка інформація про користувача.
         yearly_goal (IntegerField): Мета користувача щодо кількості прочитаних книг на рік (за замовчуванням 12).
         avatar (ImageField, optional): Зображення профілю користувача.
+
     """
 
     groups = models.ManyToManyField(
@@ -53,18 +53,17 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     
     def __str__(self):
-        """
-        Повертає рядкове представлення користувача.
+        """Повертає рядкове представлення користувача.
 
         Returns:
             str: Електронна пошта користувача (або `username`, якщо `email` відсутній).
+
         """
         return self.email or self.username
 
 # 2. Книга (Book)
 class Book(models.Model):
-    """
-    Модель, що представляє книгу в особистій бібліотеці користувача.
+    """Модель, що представляє книгу в особистій бібліотеці користувача.
     
     Зберігає детальну інформацію про книгу, її статус у бібліотеці, 
     оцінку, а також автоматично розраховує прогрес читання.
@@ -86,7 +85,9 @@ class Book(models.Model):
         startDate (DateField, optional): Дата початку читання.
         endDate (DateField, optional): Дата завершення читання.
         note (TextField, optional): Загальна нотатка до книги.
+
     """
+
     STATUS_CHOICES = (
         ('reading', 'Читаю'),
         ('read', 'Прочитано'),
@@ -118,8 +119,7 @@ class Book(models.Model):
     note = models.TextField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
-        """
-        Перевизначений метод збереження моделі.
+        """Перевизначений метод збереження моделі.
         
         Автоматично розраховує відсоток прогресу читання на основі `currentPage` 
         та `totalPages`. Якщо статус змінюється на 'read', автоматично фіксує 
@@ -139,18 +139,17 @@ class Book(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        """
-        Повертає рядкове представлення книги.
+        """Повертає рядкове представлення книги.
 
         Returns:
             str: Рядок у форматі "Назва by Автор (email користувача)".
+
         """
         return f"{self.title} by {self.author} ({self.user.email})"
 
 # 3. Сесія читання (ReadingSession)
 class ReadingSession(models.Model):
-    """
-    Модель, що представляє окрему сесію читання книги користувачем.
+    """Модель, що представляє окрему сесію читання книги користувачем.
 
     Дозволяє відстежувати, скільки часу користувач витратив на читання певної книги
     в конкретний день. Використовується для генерації статистики.
@@ -160,25 +159,26 @@ class ReadingSession(models.Model):
         date (DateField): Дата проведення сесії (встановлюється автоматично).
         duration (IntegerField): Тривалість читання в хвилинах.
         note (TextField, optional): Короткий запис або думки щодо цієї конкретної сесії.
+
     """
+
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reading_sessions')
     date = models.DateField(auto_now_add=True)
     duration = models.IntegerField(help_text="Тривалість у хвилинах")
     note = models.TextField(blank=True, null=True)
     
     def __str__(self):
-        """
-        Повертає рядкове представлення сесії читання.
+        """Повертає рядкове представлення сесії читання.
 
         Returns:
             str: Рядок із зазначенням назви книги та дати сесії.
+
         """
         return f"Session for {self.book.title} on {self.date}"
 
 # 4. Нотатка (Note)
 class Note(models.Model):
-    """
-    Модель для збереження розгорнутих нотаток до конкретної книги.
+    """Модель для збереження розгорнутих нотаток до конкретної книги.
 
     Користувач може створювати безліч нотаток для однієї книги та позначати 
     деякі з них як улюблені.
@@ -189,7 +189,9 @@ class Note(models.Model):
         content (TextField): Текст нотатки.
         createdAt (DateTimeField): Дата та час створення нотатки.
         isFavorite (BooleanField): Прапорець, що вказує, чи додана нотатка до улюблених.
+
     """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notes')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book_notes')
     content = models.TextField()
@@ -197,18 +199,17 @@ class Note(models.Model):
     isFavorite = models.BooleanField(default=False)
     
     def __str__(self):
-        """
-        Повертає рядкове представлення нотатки.
+        """Повертає рядкове представлення нотатки.
 
         Returns:
             str: Рядок із зазначенням назви книги, до якої належить нотатка.
+
         """
         return f"Note on {self.book.title}"
 
 # 5. Цитата (Quote)
 class Quote(models.Model):
-    """
-    Модель для збереження вибраних цитат із книги.
+    """Модель для збереження вибраних цитат із книги.
 
     Подібна до моделі `Note`, але семантично призначена саме для збереження
     прямої мови чи уривків з тексту книги.
@@ -219,7 +220,9 @@ class Quote(models.Model):
         content (TextField): Текст цитати.
         createdAt (DateTimeField): Дата та час збереження цитати.
         isFavorite (BooleanField): Прапорець, що вказує, чи додана цитата до улюблених.
+
     """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quotes')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book_quotes')
     content = models.TextField()
@@ -227,10 +230,10 @@ class Quote(models.Model):
     isFavorite = models.BooleanField(default=False)
     
     def __str__(self):
-        """
-        Повертає рядкове представлення цитати.
+        """Повертає рядкове представлення цитати.
 
         Returns:
             str: Рядок із зазначенням назви книги, з якої взято цитату.
+
         """
         return f"Quote from {self.book.title}"
