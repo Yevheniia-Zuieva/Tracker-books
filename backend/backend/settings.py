@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'djoser',
     'corsheaders',
     'django.contrib.sites',
+    'drf_spectacular',
 ]
 
 # Використовуємо власну модель користувача
@@ -137,6 +138,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Internationalization
@@ -185,3 +187,25 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
 DEFAULT_FROM_EMAIL = 'Tracker Books <noreply@trackerbooks.com>'
 
 SITE_ID = 1
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Book Tracker API',
+    'DESCRIPTION': 'API для управління бібліотекою та прогресом читання',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Цей блок додає підтримку JWT у вікно Swagger
+    'COMPONENT_SPLIT_PATCH': True,
+    'COMPONENT_SPLIT_COMMAND': True,
+    'SECURITY': [{
+        'jwtAuth': [],
+    }],
+    'APPEND_COMPONENTS': {
+        "securitySchemes": {
+            "jwtAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+}
