@@ -34,3 +34,8 @@ db.sqlite3-journal
 Thumbs.db
 *.swp
 *.swo
+
+# Документація та допоміжні скрипти
+pdoc_init.py
+docs/backend_html/
+docs/frontend_html/

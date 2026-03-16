@@ -1,3 +1,8 @@
+/**
+ * @file Сторінка пошуку нових книг.
+ * Надає можливість шукати книги через зовнішній API (Google Books) або додавати їх вручну.
+ */
+
 import { useState } from "react";
 import { Search, PlusCircle, BookOpen, Loader2 } from "lucide-react";
 import { Input } from "./ui/input";
@@ -6,6 +11,11 @@ import { apiBooks } from "../api/ApiService";
 import { AddBookDialog } from "./AddBookDialog";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
 
+/**
+ * Компонент сторінки пошуку книг.
+ *
+ * @returns {JSX.Element} React-компонент сторінки пошуку.
+ */
 export function SearchPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -14,6 +24,10 @@ export function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
+  /**
+   * Виконує запит до зовнішнього API для пошуку книг за введеним запитом та фільтром.
+   * @async
+   */
   const handleSearch = async () => {
     if (!query.trim()) return;
 
@@ -31,6 +45,11 @@ export function SearchPage() {
     }
   };
 
+  /**
+   * Обробник додавання знайденої через API книги до власної бібліотеки користувача.
+   * * @async
+   * @param {Object} book - Об'єкт книги, отриманий з результатів пошуку Google Books.
+   */
   const handleAddGoogleBook = async (book) => {
     if (!confirm(`Додати книгу "${book.title}" до бібліотеки?`)) return;
 

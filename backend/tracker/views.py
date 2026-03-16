@@ -1,3 +1,7 @@
+"""
+Модуль містить представлення (views) для обробки запитів API.
+Включає CRUD операції для моделей, статистику та інтеграцію з зовнішнім API.
+"""
 import re  # Для очищення даних
 
 import requests
@@ -15,23 +19,50 @@ from .models import Book, Note, Quote, ReadingSession
 from .serializers import BookSerializer, NoteSerializer, QuoteSerializer, ReadingSessionSerializer, UserSerializer
 
 
-# --- Базовий клас для фільтрації по користувачу ---
 class UserFilteredModelViewSet(viewsets.ModelViewSet):
+    """
+    Базовий ViewSet, який обмежує доступ до об'єктів лише їх автору.
+
+    Attributes:
+        permission_classes (list): Перелік класів дозволів (тільки авторизовані).
+    """
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """
+        Фільтрує набір даних за поточним авторизованим користувачем.
+
+        Returns:
+            QuerySet: Відфільтровані об'єкти для поточного користувача.
+        """
         return self.queryset.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        """
+        Зберігає новий об'єкт, автоматично прив'язуючи його до поточного користувача.
+
+        Args:
+            serializer: Серіалізатор з валідованими даними об'єкта.
+        """
         serializer.save(user=self.request.user)
 
-# --- 1. Книги (BookViewSet) ---
 class BookViewSet(UserFilteredModelViewSet):
+    """
+    ViewSet для управління книгами користувача (CRUD операції).
+    Підтримує сортування за рейтингом, жанром або датою додавання.
+    """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     filter_fields = ['status', 'genre'] 
 
     def get_queryset(self):
+        """
+        Отримує набір книг користувача із застосуванням сортування, 
+        якщо вказано параметр запиту 'sort'.
+
+        Returns:
+            QuerySet: Відсортовані книги.
+        """
         queryset = super().get_queryset()
         sort_by = self.request.query_params.get('sort', None)
         
@@ -42,16 +73,34 @@ class BookViewSet(UserFilteredModelViewSet):
 
         return queryset.order_by('-addedDate')
 
-# --- 2. Сесії читання (ReadingSessionViewSet) ---
 class ReadingSessionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для створення та перегляду сесій читання.
+    """
     queryset = ReadingSession.objects.all()
     serializer_class = ReadingSessionSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """
+        Отримує сесії читання лише для книг, що належать поточному користувачу.
+
+        Returns:
+            QuerySet: Сесії читання користувача.
+        """
         return ReadingSession.objects.filter(book__user=self.request.user)
 
     def perform_create(self, serializer):
+        """
+        Створює нову сесію читання. Перевіряє права доступу до книги та
+        автоматично оновлює статус книги на 'reading', якщо необхідно.
+
+        Args:
+            serializer: Серіалізатор з даними сесії.
+            
+        Raises:
+            PermissionDenied: Якщо користувач намагається додати сесію до чужої книги.
+        """
         book = serializer.validated_data.get('book')
         
         if book.user != self.request.user:
@@ -64,31 +113,55 @@ class ReadingSessionViewSet(viewsets.ModelViewSet):
             
         serializer.save()
 
-# --- 3. Нотатки (NoteViewSet) ---
 class NoteViewSet(UserFilteredModelViewSet):
+    """
+    ViewSet для управління нотатками користувача.
+    """
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
     filter_fields = ['isFavorite']
 
-# --- 4. Цитати (QuoteViewSet) ---
 class QuoteViewSet(UserFilteredModelViewSet):
+    """
+    ViewSet для управління цитатами користувача.
+    """
     queryset = Quote.objects.all()
     serializer_class = QuoteSerializer
     filter_fields = ['isFavorite']
 
-# --- 5. Профіль та Оновлення (UserProfileView) ---
 class UserProfileView(generics.RetrieveUpdateAPIView):
+    """
+    API View для перегляду та оновлення профілю поточного користувача.
+    """
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        """
+        Отримує об'єкт поточного авторизованого користувача.
+
+        Returns:
+            User: Поточний користувач.
+        """
         return self.request.user
 
-# --- 6. Статистика (ReadingStatsAPIView) ---
 class ReadingStatsAPIView(APIView):
+    """
+    API View для отримання детальної статистики читання користувача.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        """
+        Обчислює та повертає зведену статистику користувача: 
+        виконання річної мети, кількість сторінок, час читання та статистику за жанрами.
+
+        Args:
+            request: Об'єкт HTTP запиту.
+
+        Returns:
+            Response: JSON з розрахованою статистикою.
+        """
         user = request.user
         current_year = timezone.now().year
         
@@ -175,11 +248,29 @@ class ExternalSearchAPIView(APIView):
     
     # Видаляє HTML теги з опису
     def _clean_html(self, raw_html):
+        """
+        Видаляє HTML-теги з переданого тексту.
+
+        Args:
+            raw_html (str): Текст, що містить HTML-теги.
+
+        Returns:
+            str: Очищений текст.
+        """
         cleanr = re.compile('<.*?>')
         return re.sub(cleanr, '', raw_html)
 
     # Конвертація результатів Google Books API у формат фронтенду
     def _format_google_book(self, item):
+        """
+        Конвертує структуру даних від Google Books API у формат, сумісний з фронтендом.
+
+        Args:
+            item (dict): Словник з даними книги від Google API.
+
+        Returns:
+            dict: Відформатований словник з необхідними полями.
+        """
         volume_info = item.get('volumeInfo', {})
         
         title = volume_info.get('title', 'Невідома назва')

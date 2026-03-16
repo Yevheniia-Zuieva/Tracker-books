@@ -1,3 +1,7 @@
+/**
+ * @file Компонент картки книги.
+ * Відповідає за візуальне відображення інформації про книгу.
+ */
 import { useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -24,6 +28,11 @@ export function BookCard({ book, onBookClick, compact = false, onNoteUpdate }) {
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [noteText, setNoteText] = useState(book.note || "");
 
+  /**
+   * Повертає конфігурацію бейджа залежно від статусу книги.
+   * @param {string} status - Поточний статус книги (наприклад, 'reading', 'read').
+   * @returns {{label: string, variant: string}} Об'єкт з текстом та варіантом стилю для компонента Badge.
+   */
   const getStatusBadge = (status) => {
     const statusMap = {
       reading: { label: "Читаю", variant: "default" },

@@ -1,3 +1,8 @@
+/**
+ * @file Сторінка авторизації та реєстрації користувачів.
+ * Містить форми для входу та створення нового акаунта з вбудованою валідацією.
+ */
+
 import { useState } from "react";
 import {
   Card,
@@ -25,6 +30,15 @@ import { Link } from "react-router-dom";
 // Імпортуємо наш API сервіс
 import { apiAuth } from "../api/ApiService";
 
+/**
+ * Компонент сторінки автентифікації.
+ * Надає інтерфейс із вкладками для входу (Login) та реєстрації (Register).
+ *
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onAuth - Функція зворотного виклику, що виконується після успішної автентифікації.
+ * Передає об'єкт користувача та токен доступу.
+ * @returns {JSX.Element} React-компонент сторінки авторизації.
+ */
 export function AuthPage({ onAuth }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -42,7 +56,12 @@ export function AuthPage({ onAuth }) {
   const [registerError, setRegisterError] = useState(null);
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
 
-  //  ЛОГІКА ВХОДУ
+  /**
+   * Обробник події відправки форми входу.
+   * Перевіряє наявність даних та виконує запит до API для авторизації.
+   * @async
+   * @param {React.FormEvent} e - Подія відправки форми.
+   */
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError(null);
@@ -76,7 +95,11 @@ export function AuthPage({ onAuth }) {
     }
   };
 
-  //  ВАЛІДАЦІЯ РЕЄСТРАЦІЇ
+  /**
+   * Виконує клієнтську валідацію полів форми реєстрації.
+   * Перевіряє формат електронної пошти, складність пароля та збіг паролів.
+   * * @returns {string|null} Текст помилки валідації або null, якщо помилок немає.
+   */
   const validateRegisterForm = () => {
     const { name, email, password, confirmPassword } = registerData;
 
@@ -110,7 +133,12 @@ export function AuthPage({ onAuth }) {
     return null; // Помилок немає
   };
 
-  //  ЛОГІКА РЕЄСТРАЦІЇ
+  /**
+   * Обробник події відправки форми реєстрації.
+   * Спочатку викликає клієнтську валідацію, а потім виконує запит до API.
+   * @async
+   * @param {React.FormEvent} e - Подія відправки форми.
+   */
   const handleRegister = async (e) => {
     e.preventDefault();
     setRegisterError(null);

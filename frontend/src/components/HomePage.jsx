@@ -1,19 +1,34 @@
+/**
+ * @file Головна сторінка додатку (Бібліотека користувача).
+ * Відповідає за завантаження, фільтрацію, сортування та відображення списку книг.
+ */
 import { useState, useEffect } from "react";
 import { CategoryTabs } from "./CategoryTabs";
 import { BookCard } from "./BookCard";
 import { apiBooks } from "../api/ApiService";
 import { Loader2 } from "lucide-react";
 
+/**
+ * Компонент домашньої сторінки, що відображає бібліотеку книг користувача.
+ *
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onBookClick - Функція зворотного виклику, що спрацьовує при кліку на картку книги.
+ * @returns {JSX.Element} React-компонент головної сторінки.
+ */
 export function HomePage({ onBookClick }) {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("home");
 
-  // 1. Завантаження книг при старті
+  // Завантаження книг при старті
   useEffect(() => {
     loadBooks();
   }, []);
 
+  /**
+   * Асинхронно завантажує список книг користувача з сервера.
+   * @async
+   */
   const loadBooks = async () => {
     try {
       setIsLoading(true);
@@ -26,7 +41,13 @@ export function HomePage({ onBookClick }) {
     }
   };
 
-  // 2. Оновлення нотатки (відправляємо на сервер і оновлюємо локально)
+  /**
+   * Обробник збереження нотатки до книги.
+   * Оновлює стан локально для миттєвого відображення та відправляє запит на сервер.
+   * * @async
+   * @param {number|string} bookId - Унікальний ідентифікатор книги.
+   * @param {string} note - Новий текст нотатки.
+   */
   const handleNoteUpdate = async (bookId, note) => {
     try {
       // Оптимістичне оновлення (миттєво на екрані)
@@ -42,7 +63,10 @@ export function HomePage({ onBookClick }) {
     }
   };
 
-  // 3. Логіка фільтрації
+  /**
+   * Фільтрує та сортує масив книг залежно від обраної категорії (вкладки).
+   * * @returns {Array} Відфільтрований та відсортований масив книг.
+   */
   const getFilteredBooks = () => {
     const filtered = [...books];
 
@@ -67,7 +91,10 @@ export function HomePage({ onBookClick }) {
     }
   };
 
-  // 4. Підрахунок кількості книг для бейджиків
+  /**
+   * Підраховує кількість книг у кожній категорії для відображення на вкладках (бейджах).
+   * * @returns {Object} Об'єкт, де ключі — це назви категорій, а значення — кількість книг.
+   */
   const getBookCounts = () => {
     return {
       all: books.length,
@@ -83,7 +110,10 @@ export function HomePage({ onBookClick }) {
   const filteredBooks = getFilteredBooks();
   const bookCounts = getBookCounts();
 
-  // Спеціальний вигляд для категорії "За жанрами"
+  /**
+   * Спеціальна функція для рендерингу книг, згрупованих за жанрами.
+   * * @returns {JSX.Element} Розмітка з категоріями жанрів та сітками книг.
+   */
   const renderBooksByGenre = () => {
     const genres = [...new Set(books.map((b) => b.genre))]
       .filter(Boolean)

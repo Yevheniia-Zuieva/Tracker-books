@@ -1,3 +1,8 @@
+/**
+ * @file Головний компонент додатку.
+ * Відповідає за ініціалізацію, маршрутизацію (React Router), глобальний стан авторизації 
+ * та відображення основного макета (Layout) з навігацією.
+ */
 import { useState, useEffect } from "react";
 import { AuthPage } from "./components/AuthPage";
 import { HomePage } from "./components/HomePage";
@@ -13,16 +18,28 @@ import {
 import { RequestResetPage } from "./components/RequestResetPage";
 import { ResetPasswordConfirmPage } from "./components/ResetPasswordConfirmPage";
 
+/**
+ * Головний React-компонент додатку Tracker Books.
+ * Керує станом користувача, перевіряє JWT токен при завантаженні та визначає,
+ * які сторінки показувати (авторизацію чи основний інтерфейс).
+ *
+ * @returns {JSX.Element} Кореневий компонент додатку з налаштованою маршрутизацією.
+ */
 function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState("home");
 
-  // 1. Перевірка авторизації при першому завантаженні
+  // Перевірка авторизації при першому завантаженні
   useEffect(() => {
     checkAuth();
   }, []);
 
+  /**
+   * Асинхронно перевіряє наявність та валідність токена доступу.
+   * Якщо токен дійсний, завантажує профіль користувача.
+   * @async
+   */
   const checkAuth = async () => {
     const token = localStorage.getItem("access_token");
     if (token) {
@@ -38,19 +55,29 @@ function App() {
     setIsLoading(false);
   };
 
-  // 2. Обробка успішного входу/реєстрації (викликається з AuthPage)
+  /**
+   * Обробник успішної авторизації. Зберігає токен та встановлює користувача.
+   * @param {Object} userData - Дані профілю авторизованого користувача.
+   * @param {string} token - JWT токен доступу.
+   */
   const handleAuthSuccess = (userData, token) => {
     localStorage.setItem("access_token", token);
     // AuthPage повертає об'єкт {id, email, name}, приводимо його до UserProfile
     setUser(userData);
   };
 
-  // 3. Вихід з системи
+  /**
+   * Обробник виходу з системи. Видаляє токени та очищає стан користувача.
+   */
   const handleLogout = () => {
     apiAuth.logout(); // Видаляє токени
     setUser(null);
   };
 
+  /**
+   * Обробник кліку на книгу для перегляду її деталей.
+   * @param {Object} book - Об'єкт обраної книги.
+   */
   const handleBookClick = (book) => {
     console.log("Клік по книзі:", book.title);
     // Тут пізніше буде відкриття модального вікна або перехід на сторінку книги
@@ -65,7 +92,11 @@ function App() {
     );
   }
 
-  // Основний інтеріейс
+  /**
+   * Внутрішній компонент основного макета (Layout).
+   * Містить навігаційну панель (Header) та область для рендерингу поточного вигляду.
+   * @returns {JSX.Element} Макет авторизованої зони додатку.
+   */
   const MainAppLayout = () => (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Хедер */}

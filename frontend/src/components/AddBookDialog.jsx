@@ -1,3 +1,8 @@
+/**
+ * @file Модальне вікно для додавання книги вручну.
+ * Дозволяє користувачу ввести дані про книгу (назву, автора, сторінки тощо), якщо її немає в пошуку.
+ */
+
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -6,6 +11,15 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { apiBooks } from "../api/ApiService";
 
+/**
+ * Компонент діалогового вікна додавання книги.
+ *
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isOpen - Прапорець, що визначає, чи відкрите модальне вікно.
+ * @param {Function} props.onClose - Функція зворотного виклику для закриття вікна.
+ * @param {Function} props.onBookAdded - Функція зворотного виклику, що виконується після успішного збереження книги.
+ * @returns {JSX.Element|null} React-компонент модального вікна, або null, якщо `isOpen` false.
+ */
 export function AddBookDialog({ isOpen, onClose, onBookAdded }) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,11 +34,22 @@ export function AddBookDialog({ isOpen, onClose, onBookAdded }) {
 
   if (!isOpen) return null;
 
+  /**
+   * Обробник зміни значень у полях форми.
+   * Оновлює стан formData відповідно до введених даних.
+   * * @param {React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>} e - Подія зміни інпуту.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Обробник відправки форми.
+   * Формує об'єкт даних та відправляє запит на API для збереження книги.
+   * @async
+   * @param {React.FormEvent} e - Подія відправки форми.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);

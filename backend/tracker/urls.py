@@ -1,3 +1,8 @@
+"""
+Модуль маршрутизації (URL-конфігурація) для додатку tracker.
+Визначає кінцеві точки (endpoints) для REST API за допомогою DefaultRouter
+та реєструє окремі шляхи для профілю, статистики і зовнішнього пошуку.
+"""
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
