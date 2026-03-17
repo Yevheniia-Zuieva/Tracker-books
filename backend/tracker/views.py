@@ -1,6 +1,7 @@
 """Модуль містить представлення (views) для обробки запитів API.
 Включає CRUD операції для моделей, статистику та інтеграцію з зовнішнім API.
 """
+import logging
 import re  # Для очищення даних
 
 import requests
@@ -17,6 +18,8 @@ from rest_framework.views import APIView
 from .models import Book, Note, Quote, ReadingSession
 from .serializers import BookSerializer, NoteSerializer, QuoteSerializer, ReadingSessionSerializer, UserSerializer
 
+# Ініціалізуємо логер для цього модуля
+logger = logging.getLogger('tracker')
 
 class UserFilteredModelViewSet(viewsets.ModelViewSet):
     """Базовий ViewSet, який обмежує доступ до об'єктів лише їх автору.
@@ -45,6 +48,7 @@ class UserFilteredModelViewSet(viewsets.ModelViewSet):
 
         """
         serializer.save(user=self.request.user)
+        logger.info(f"User {self.request.user.id} created a new {self.queryset.model.__name__}")
 
 class BookViewSet(UserFilteredModelViewSet):
     """ViewSet для управління книгами користувача (CRUD операції).
@@ -66,6 +70,9 @@ class BookViewSet(UserFilteredModelViewSet):
         queryset = super().get_queryset()
         sort_by = self.request.query_params.get('sort', None)
         
+        if sort_by:
+            logger.debug(f"Sorting books for user {self.request.user.id} by {sort_by}")
+
         if sort_by == 'by-rating':
             return queryset.order_by('-rating', 'title')
         if sort_by == 'by-genre':
@@ -103,14 +110,17 @@ class ReadingSessionViewSet(viewsets.ModelViewSet):
         book = serializer.validated_data.get('book')
         
         if book.user != self.request.user:
+            logger.warning(f"Unauthorized access attempt: User {self.request.user.id} tried to add session to book {book.id}")
             raise PermissionDenied("Ви не можете додавати сесії до книги, яка вам не належить.")
 
         # Оновлення статусу книги, якщо вона була 'want-to-read'
         if book.status == 'want-to-read':
             book.status = 'reading'
             book.save() # Викликає save, що оновить прогрес
+            logger.info(f"Book status updated to 'reading' for book {book.id} (User {self.request.user.id})")
             
         serializer.save()
+        logger.info(f"New reading session added for book {book.id}")
 
 class NoteViewSet(UserFilteredModelViewSet):
     """ViewSet для управління нотатками користувача."""
@@ -157,6 +167,8 @@ class ReadingStatsAPIView(APIView):
             Response: JSON з розрахованою статистикою.
 
         """
+        logger.info(f"Generating reading stats for user {request.user.id}")
+
         user = request.user
         current_year = timezone.now().year
         
@@ -204,6 +216,8 @@ class ReadingStatsAPIView(APIView):
         ).filter(total_session_duration__isnull=False).count()
         
         avg_time_per_book = time_stats['total_duration_minutes'] / books_with_sessions_count if books_with_sessions_count > 0 else 0
+
+        logger.debug(f"Stats successfully calculated for user {user.id}")
 
         return Response({
             'yearlyGoal': user.yearly_goal,
@@ -313,6 +327,7 @@ class ExternalSearchAPIView(APIView):
 
         """
         if not settings.GOOGLE_BOOKS_API_KEY:
+            logger.critical("Google Books API Key is missing in settings.py")
             return Response(
                 {"error": "Ключ Google Books API не налаштований у settings.py."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -323,6 +338,8 @@ class ExternalSearchAPIView(APIView):
         
         if not query:
             return Response({"results": []})
+        
+        logger.info(f"Searching for '{query}' via Google Books API (Filter: {search_filter})")
 
         filter_map = {
             'title': 'intitle',
@@ -353,6 +370,9 @@ class ExternalSearchAPIView(APIView):
             response.raise_for_status() 
             data = response.json()
             
+            count = len(data.get('items', []))
+            logger.info(f"Google API returned {count} results for query '{query}'")
+
             if 'items' in data:
                 formatted_results = [self._format_google_book(item) for item in data['items']]
                 return Response({"results": formatted_results})
@@ -360,7 +380,7 @@ class ExternalSearchAPIView(APIView):
                 return Response({"results": []})
 
         except requests.exceptions.RequestException as e:
-            print(f"Помилка запиту до Google Books API: {e}")
+            logger.error(f"Google Books API Request failed: {str(e)}", exc_info=True)
             return Response(
                 {"error": "Не вдалося підключитися до зовнішнього API пошуку."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE

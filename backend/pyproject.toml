@@ -1,10 +1,7 @@
 [tool.ruff]
-# Базові правила: E (стиль pycodestyle), F (логічні помилки Pyflakes), I (сортування імпортів)
-select = ["E", "F", "I"]
-ignore = []
-
-# Збільшуємо ліміт довжини рядка, бо у Django часто бувають довгі ORM-запити
+# Загальні налаштування мають бути тут
 line-length = 150
+target-version = "py312"
 
 # Ігноруємо специфічні директорії
 exclude = [
@@ -15,7 +12,12 @@ exclude = [
     "migrations",
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+# Базові правила перевірки (linter): E (стиль pycodestyle), F (логічні помилки Pyflakes), I (сортування імпортів)
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
 # Ігноруємо невикористані імпорти в __init__.py файлах
 "__init__.py" = ["F401"]
 

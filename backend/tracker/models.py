@@ -1,7 +1,10 @@
+import logging
+
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils import timezone
 
+logger = logging.getLogger('tracker')
 
 # 1. Кастомна модель користувача (User)
 class User(AbstractUser):
@@ -125,18 +128,42 @@ class Book(models.Model):
         та `totalPages`. Якщо статус змінюється на 'read', автоматично фіксує 
         `endDate` (якщо він не заданий) та встановлює `currentPage` рівним `totalPages`.
         """
+        # Визначаємо, чи це створення нової книги, чи оновлення існуючої
+        is_new = self.pk is None
+
+        # 1. Логування розрахунку прогресу (DEBUG рівень)
         if self.totalPages and self.currentPage and self.totalPages > 0:
             self.progress = min(100, int((self.currentPage / self.totalPages) * 100))
         else:
+            # Якщо сторінок 0, але книга в списку - це може бути помилка даних
+            if self.totalPages == 0:
+                logger.warning(f"Data Anomaly: Book ID {self.id} has 0 total pages.")
             self.progress = 0
             
+        # 2. Логування автоматичної фіксації дати завершення
         if self.status == 'read' and not self.endDate:
             self.endDate = timezone.now().date()
+            logger.info(f"Book Lifecycle: Status 'read' detected. Auto-setting endDate for Book ID {self.id}")
         
+        # 3. Логування автоматичного корегування сторінок
         if self.status == 'read' and self.totalPages and self.currentPage < self.totalPages:
+            logger.debug(f"Adjusting currentPage to totalPages for Book ID {self.id} due to 'read' status")
             self.currentPage = self.totalPages
             
-        super().save(*args, **kwargs)
+        try:
+            # Власне критична операція з базою даних
+            super().save(*args, **kwargs)
+            
+            # Логування успішного завершення операції
+            if is_new:
+                logger.info(f"DB Success: New book record created (ID: {self.id})")
+            else:
+                logger.debug(f"DB Success: Book record updated (ID: {self.id})")
+                
+        except Exception as e:
+            # Логування критичної помилки запису в БД
+            logger.critical(f"DB Critical Error: Failed to save Book record. Reason: {str(e)}", exc_info=True)
+            raise e # Прокидаємо помилку далі
 
     def __str__(self):
         """Повертає рядкове представлення книги.
