@@ -211,6 +211,13 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
+# Отримуємо рівень логування зі змінної оточення, за замовчуванням 'INFO'
+LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO').upper()
+
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
+    
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -222,7 +229,7 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'class': 'logging.FileHandler',
             'filename': 'logs/tracker_books.log',
             'formatter': 'verbose',
@@ -240,7 +247,8 @@ LOGGING = {
         },
         'tracker': {  # Власний логер
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
+            'propagate': True,
         },
     },
 }
