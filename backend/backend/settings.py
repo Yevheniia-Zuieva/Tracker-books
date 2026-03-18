@@ -223,16 +223,19 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{asctime} [{levelname}] {module} {process:d} {thread:d} {message}',
+            'format': '{asctime} [{levelname}] [{name}] {message}',
             'style': '{',
         },
     },
     'handlers': {
         'file': {
             'level': LOG_LEVEL,
-            'class': 'logging.FileHandler',
-            'filename': 'logs/tracker_books.log',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, 'tracker_books.log'),
             'formatter': 'verbose',
+            'maxBytes': 1024*1024*5, # 5MB
+            'backupCount': 5,
+            'encoding': 'utf-8',
         },
         'console': {
             'class': 'logging.StreamHandler',

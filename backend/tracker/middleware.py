@@ -74,14 +74,16 @@ class ExceptionLoggingMiddleware:
         context = {
             "error_id": error_id,
             "path": request.path,
+            "full_url": request.build_absolute_uri(),
             "method": request.method,
             "user_id": user_id,
+            "session_key": request.session.session_key,
             "query_params": dict(request.GET),
         }
 
         # 3. Логуємо критичну помилку з повним контекстом
         # exc_info=True гарантує, що в лог буде записано повний Traceback (стек викликів)
-        logger.critical(
+        logger.error(
             f"Unhandled Exception [{error_id}]: {str(exception)} | Context: {context}",
             exc_info=True  
         )
