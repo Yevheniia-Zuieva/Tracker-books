@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -55,6 +55,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -67,7 +68,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -140,6 +141,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'UNICODE_JSON': True,
 }
 
 # Internationalization
@@ -255,3 +257,16 @@ LOGGING = {
         },
     },
 }
+
+#Налаштування для локалізації (LocaleMiddleware)
+LANGUAGE_CODE = 'uk'  # Мова за замовчуванням
+
+# Список мов, які підтримує застосунок
+LANGUAGES = [
+    ('uk', 'Ukrainian'),
+    ('en', 'English'),
+]
+
+USE_I18N = True  # Вмикає систему перекладів
+USE_L10N = True  # Вмикає локалізацію форматів (дати, числа)
+USE_TZ = True    # Вмикає роботу з часовими поясами

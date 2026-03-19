@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Помилка сервера | Tracker Books</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fff1f2; color: #991b1b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 550px; border-top: 5px solid #ef4444; }
+        h1 { font-size: 1.8rem; color: #1e293b; margin-bottom: 1rem; }
+        p { color: #475569; line-height: 1.6; }
+        .error-id-box { background: #f1f5f9; padding: 1rem; border-radius: 8px; margin: 1.5rem 0; border: 1px dashed #cbd5e1; }
+        .error-id-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+        .error-id-value { font-family: monospace; font-size: 1.2rem; font-weight: bold; color: #ef4444; }
+        .support { font-size: 0.9rem; color: #64748b; margin-top: 2rem; }
+        .btn { display: inline-block; background-color: #1e293b; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Виникла внутрішня помилка</h1>
+        <p>Наші алгоритми вже зафіксували проблему. Спробуйте оновити сторінку через кілька хвилин.</p>
+        
+        <div class="error-id-box">
+            <div class="error-id-label">Код інциденту</div>
+            <div class="error-id-value">{{ error_id|default:"SERVER_ERR" }}</div>
+        </div>
+
+        <p class="support">Якщо проблема не зникає, надішліть цей код на <br><strong>support@trackerbooks.com</strong></p>
+        <a href="http://localhost:5173/" class="btn">На головну</a>
+    </div>
+</body>
+</html>

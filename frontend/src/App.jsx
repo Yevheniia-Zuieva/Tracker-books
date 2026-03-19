@@ -17,6 +17,8 @@ import {
 } from "react-router-dom";
 import { RequestResetPage } from "./components/RequestResetPage";
 import { ResetPasswordConfirmPage } from "./components/ResetPasswordConfirmPage";
+import NotFound from './components/NotFound';
+import ServerError from './components/ServerError';
 
 /**
  * Головний React-компонент додатку Tracker Books.
@@ -34,6 +36,30 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  /**
+ * Глобальний перехоплювач помилок JavaScript (Frontend Logging).
+ * Використовується для моніторингу стабільності клієнтської частини.
+ * * @param {string} message - Опис помилки (наприклад, "ReferenceError: x is not defined").
+ * @param {string} source - Шлях до файлу скрипта, де виникла помилка.
+ * @param {number} lineno - Рядок коду, на якому стався збій.
+ * @param {number} colno - Стовпець рядка (позиція символу).
+ * @param {Error} error - Повний об'єкт помилки, що містить Stack Trace для відладки.
+ */
+  window.onerror = function(message, source, lineno, colno, error) {
+    fetch('http://localhost:8000/api/logs/frontend/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: message,
+        source: source,
+        line: lineno,
+        column: colno,
+        stack: error ? error.stack : 'No stack trace available',
+        user: localStorage.getItem('user_email') || 'anonymous'
+      })
+    });
+  };
 
   /**
    * Асинхронно перевіряє наявність та валідність токена доступу.
@@ -173,14 +199,20 @@ function App() {
           element={<ResetPasswordConfirmPage />}
         />
 
+        {/* Сторінка 500 доступна завжди, щоб показати помилку сервера */}
+        <Route path="/server-error" element={<ServerError />} />
+
         {/* Марштур авторизації/головної сторінки */}
         {/* Якщо юзер Є -> показуємо додаток. Якщо НЕМАЄ -> показуємо логін */}
         <Route
-          path="*"
+          path="/"
           element={
             user ? <MainAppLayout /> : <AuthPage onAuth={handleAuthSuccess} />
           }
         />
+
+        {/* Якщо ввели адресу, якої не існує ні в API, ні в роутері */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

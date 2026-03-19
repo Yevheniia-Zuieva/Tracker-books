@@ -1,6 +1,7 @@
 """Модуль містить представлення (views) для обробки запитів API.
 Включає CRUD операції для моделей, статистику та інтеграцію з зовнішнім API.
 """
+import json
 import logging
 import re  # Для очищення даних
 
@@ -8,7 +9,10 @@ import requests
 from django.conf import settings
 from django.db.models import Avg, Count, Sum
 from django.db.models.functions import Coalesce, ExtractMonth
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -18,8 +22,59 @@ from rest_framework.views import APIView
 from .models import Book, Note, Quote, ReadingSession
 from .serializers import BookSerializer, NoteSerializer, QuoteSerializer, ReadingSessionSerializer, UserSerializer
 
+
+def custom_404_view(request, exception):
+    return render(request, '404.html', status=404)
+
+def custom_500_view(request):
+    return render(request, '500.html', status=500)
+
 # Ініціалізуємо логер для цього модуля
 logger = logging.getLogger('tracker')
+
+frontend_logger = logging.getLogger('frontend')
+
+@csrf_exempt  # Дозволяємо запити без CSRF-токена для цього логера
+def frontend_log_view(request):
+    """
+    Обробник для збору та фіксації помилок, що виникають на стороні клієнта (React).
+    
+    Метод приймає POST-запити з JSON-даними про інцидент, структурує їх 
+    та записує у системний лог-файл бекенду. 
+
+    Декоратор @csrf_exempt використовується, оскільки логування помилок 
+    має працювати безперебійно, навіть якщо сесія користувача недійсна 
+    або виникли проблеми з CSRF-токеном.
+
+    Args:
+        request (HttpRequest): Об'єкт HTTP-запиту, що містить:
+            - message (str): Опис помилки.
+            - source (str): Файл, де стався збій.
+            - line (int): Рядок коду.
+            - column (int): Стовпець.
+            - stack (str): Повний Stack Trace помилки.
+            - user (str): Email користувача або 'anonymous'.
+
+    Returns:
+        JsonResponse: Статус 'ok' (200) при успішному логуванні 
+                      або 'error' (400) при некоректних даних.
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            # Формуємо красивий запис у файл tracker_books.log
+            logger.error(
+                f"--- FRONTEND ERROR ---\n"
+                f"Message: {data.get('message')}\n"
+                f"File: {data.get('source')} (Line: {data.get('line')}, Col: {data.get('column')})\n"
+                f"User: {data.get('user')}\n"
+                f"Stack: {data.get('stack')}\n"
+                f"-----------------------"
+            )
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'method not allowed'}, status=405)
 
 class UserFilteredModelViewSet(viewsets.ModelViewSet):
     """Базовий ViewSet, який обмежує доступ до об'єктів лише їх автору.
@@ -384,4 +439,4 @@ class ExternalSearchAPIView(APIView):
             return Response(
                 {"error": "Не вдалося підключитися до зовнішнього API пошуку."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
+            )        

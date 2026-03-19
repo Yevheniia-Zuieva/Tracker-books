@@ -47,7 +47,14 @@ class ExceptionLoggingMiddleware:
         Returns:
             HttpResponse: Відповідь від наступних шарів застосунку.
         """
-        return self.get_response(request)
+        # Логування запиту (Request)
+        logger.info(f"Request: {request.method} {request.get_full_path()} from {request.META.get('REMOTE_ADDR')}")
+        
+        response = self.get_response(request)
+        
+        # Логування відповіді (Response)
+        logger.info(f"Response: Status {response.status_code} for {request.get_full_path()}")
+        return response
 
     def process_exception(self, request, exception):
         """Обробник непередбачуваних винятків.
@@ -88,12 +95,47 @@ class ExceptionLoggingMiddleware:
             exc_info=True  
         )
 
-        # 4. Формуємо базове інформативне повідомлення для користувача 
-        # (без розкриття технічних деталей та вразливостей системи)
+        # Ручна локалізація
+        # Отримуємо мову (встановлюється LocaleMiddleware)
+        lang = getattr(request, 'LANGUAGE_CODE', 'uk')[:2]
+
+        translations = {
+            'uk': {
+                'error': "Упс! Щось пішло не так на нашому боці.",
+                'msg': "Ми вже отримали сповіщення про проблему і працюємо над її вирішенням.",
+                'actions': [
+                    "Спробуйте оновити сторінку через хвилину.",
+                    "Перевірте ваше інтернет-з'єднання.",
+                    "Поверніться на головну сторінку бібліотеки."
+                ],
+                'support': "Будь ласка, повідомте цей код підтримці: "
+            },
+            'en': {
+                'error': "Oops! Something went wrong on our end.",
+                'msg': "We've been notified and are working on a fix.",
+                'actions': [
+                    "Try refreshing the page in a minute.",
+                    "Check your internet connection.",
+                    "Return to the library home page."
+                ],
+                'support': "Please provide this code to support: "
+            }
+        }
+
+        # Вибираємо переклад (якщо мова не uk/en, беремо uk)
+        t = translations.get(lang, translations['uk'])
+
+        # 4. Формуємо відповідь для користувача
         error_message = {
-            "error": "Виникла внутрішня помилка сервера.",
-            "message": "Ми вже працюємо над її вирішенням.",
-            "error_id": error_id, # Дозволяє користувачу передати ID у службу підтримки
+            "status": "error",
+            "error_id": error_id,
+            "error": t['error'],
+            "message": t['msg'],
+            "suggested_actions": t['actions'],
+            "support_info": {
+                "contact_email": "support@trackerbooks.com",
+                "instruction": f"{t['support']}{error_id}"
+            }
         }
 
         # 5. Розширення контексту для розробника (якщо DEBUG = True)

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Сторінку не знайдено | Tracker Books</title>
+    <style>
+        body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { text-align: center; padding: 2rem; max-width: 600px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .error-code { font-size: 6rem; font-weight: 800; color: #6366f1; margin: 0; line-height: 1; opacity: 0.2; }
+        h1 { font-size: 1.8rem; margin-top: -1rem; color: #1e293b; }
+        .description { color: #475569; font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        .instructions { background: #f1f5f9; padding: 1.5rem; border-radius: 12px; text-align: left; margin: 1.5rem 0; border-left: 4px solid #6366f1; }
+        .instructions h2 { font-size: 1rem; margin-top: 0; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .instructions ul { margin: 0; padding-left: 1.2rem; color: #64748b; font-size: 0.95rem; }
+        .instructions li { margin-bottom: 0.5rem; }
+        .illustration { font-size: 4rem; margin-bottom: 1rem; }
+        .btn { display: inline-block; background-color: #6366f1; color: white; padding: 0.8rem 2rem; border-radius: 10px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; margin-top: 1rem; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2); }
+        .btn:hover { background-color: #4f46e5; transform: translateY(-2px); }
+        .support { margin-top: 2rem; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 1.5rem; }
+        .support a { color: #6366f1; text-decoration: none; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="illustration">📖🔍</div>
+        <h1 class="error-code">404</h1>
+        <h1>Сторінку не знайдено</h1>
+        
+        <p class="description">Ми обшукали всю бібліотеку, але не змогли знайти сторінку за цією адресою. Можливо, вона була перенесена або видалена.</p>
+
+        <div class="instructions">
+            <h2>Що можна зробити:</h2>
+            <ul>
+                <li>Перевірте правильність написання URL-адреси в рядку браузера.</li>
+                <li>Спробуйте оновити сторінку або зачекайте кілька хвилин.</li>
+                <li>Скористайтеся головним меню для пошуку потрібного розділу.</li>
+            </ul>
+        </div>
+
+        <a href="http://localhost:5173/" class="btn">Повернутися до бібліотеки</a>
+
+        <div class="support">
+            Ви впевнені, що це помилка системи? <br> 
+            Повідомте нам: <a href="mailto:support@trackerbooks.com">support@trackerbooks.com</a>
+        </div>
+    </div>
+</body>
+</html>

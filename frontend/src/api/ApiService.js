@@ -31,6 +31,29 @@ API.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Інтерцептор для обробки помилок (з'єднання з кастомними сторінками)
+API.interceptors.response.use(
+  (response) => response, // Якщо статус 200-299, просто повертаємо відповідь
+  (error) => {
+    if (error.response) {
+      const status = error.response.status;
+
+      // ОБРОБКА 500 (Помилка сервера)
+      if (status === 500) {
+        const errorId = error.response.data.error_id || "UNKNOWN";
+        // Перенаправляємо на React-маршрут /server-error з параметром ID
+        window.location.href = `/server-error?id=${errorId}`;
+      }
+
+      // ОБРОБКА 404 (Не знайдено на рівні API)
+      if (status === 404) {
+        // Якщо це неіснуючий API метод, можемо теж редиректнути на 404
+        // window.location.href = "/404"; 
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 // --- СЕРВІСИ ---
 /**
  * Сервіс для роботи з аутентифікацією та профілем користувача.
