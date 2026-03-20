@@ -45,12 +45,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'django.contrib.sites',
     'drf_spectacular',
+    'debug_toolbar',
 ]
 
 # Використовуємо власну модель користувача
 AUTH_USER_MODEL = 'tracker.User'
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -62,6 +64,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'tracker.middleware.ExceptionLoggingMiddleware',  # Додаємо власний middleware для логування помилок
 ]
+
+INTERNAL_IPS = ["127.0.0.1"]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -142,6 +146,10 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'UNICODE_JSON': True,
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer', # МАЄ БУТИ ТУТ
+    ),
 }
 
 # Internationalization
