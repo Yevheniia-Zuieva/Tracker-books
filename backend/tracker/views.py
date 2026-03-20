@@ -122,12 +122,21 @@ class BookViewSet(UserFilteredModelViewSet):
             QuerySet: Відсортовані книги.
 
         """
+        # Базова фільтрація по юзеру
         queryset = super().get_queryset()
+
+        # ОПТИМІЗАЦІЯ БД: prefetch_related виправляє N+1 проблему
+        queryset = queryset.prefetch_related('reading_sessions', 'book_notes', 'book_quotes')
+        
+        # Обробка сортування
         sort_by = self.request.query_params.get('sort', None)
         
         if sort_by:
-            logger.debug(f"Sorting books for user {self.request.user.id} by {sort_by}")
+            # Використовуємо безпечне отримання ID або "Anonymous"
+            u_id = self.request.user.id if self.request.user.is_authenticated else "Anonymous"
+            logger.debug(f"Sorting books for user {u_id} by {sort_by}")
 
+        # Повернення відсортованих даних
         if sort_by == 'by-rating':
             return queryset.order_by('-rating', 'title')
         if sort_by == 'by-genre':
@@ -140,7 +149,7 @@ class ReadingSessionViewSet(viewsets.ModelViewSet):
 
     queryset = ReadingSession.objects.all()
     serializer_class = ReadingSessionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]# Дозволяємо доступ для всіх, але фільтруємо дані за користувачем
 
     def get_queryset(self):
         """Отримує сесії читання лише для книг, що належать поточному користувачу.

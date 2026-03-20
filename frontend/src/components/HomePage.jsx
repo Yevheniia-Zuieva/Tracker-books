@@ -33,9 +33,11 @@ export function HomePage({ onBookClick }) {
     try {
       setIsLoading(true);
       const data = await apiBooks.getAllBooks();
-      setBooks(data);
+      const booksArray = data.results ? data.results : data;
+      setBooks(booksArray);
     } catch (error) {
       console.error("Не вдалося завантажити книги:", error);
+      setBooks([]);
     } finally {
       setIsLoading(false);
     }

@@ -101,8 +101,8 @@ class Book(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='books')
     
     # Основні дані
-    title = models.CharField(max_length=255)
-    author = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, db_index=True)
+    author = models.CharField(max_length=255, db_index=True)
     genre = models.CharField(max_length=100)
     year = models.IntegerField(null=True, blank=True)
     cover = models.ImageField(upload_to='book_covers/', null=True, blank=True)
