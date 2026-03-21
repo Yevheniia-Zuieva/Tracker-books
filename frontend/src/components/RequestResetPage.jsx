@@ -113,3 +113,5 @@ export function RequestResetPage() {
     </div>
   );
 }
+
+export default RequestResetPage;

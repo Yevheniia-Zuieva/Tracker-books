@@ -220,3 +220,5 @@ export function HomePage({ onBookClick }) {
     </div>
   );
 }
+
+export default HomePage;

@@ -3,22 +3,23 @@
  * Відповідає за ініціалізацію, маршрутизацію (React Router), глобальний стан авторизації 
  * та відображення основного макета (Layout) з навігацією.
  */
-import { useState, useEffect } from "react";
-import { AuthPage } from "./components/AuthPage";
-import { HomePage } from "./components/HomePage";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { apiAuth } from "./api/ApiService";
 import { Loader2, LogOut, User as UserIcon, Search } from "lucide-react";
 import { Button } from "./components/ui/button";
-import { SearchPage } from "./components/SearchPage";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
 } from "react-router-dom";
-import { RequestResetPage } from "./components/RequestResetPage";
-import { ResetPasswordConfirmPage } from "./components/ResetPasswordConfirmPage";
-import NotFound from './components/NotFound';
-import ServerError from './components/ServerError';
+
+const AuthPage = lazy(() => import('./components/AuthPage'));
+const HomePage = lazy(() => import('./components/HomePage'));
+const SearchPage = lazy(() => import('./components/SearchPage')); 
+const RequestResetPage = lazy(() => import('./components/RequestResetPage')); 
+const ResetPasswordConfirmPage = lazy(() => import('./components/ResetPasswordConfirmPage')); 
+const NotFound = lazy(() => import('./components/NotFound')); 
+const ServerError = lazy(() => import('./components/ServerError'));
 
 /**
  * Головний React-компонент додатку Tracker Books.
@@ -191,29 +192,36 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {/* Публічні маршрути, які доступні без авторизації) */}
-        <Route path="/forgot-password" element={<RequestResetPage />} />
-        <Route
-          path="/password-reset/:uid/:token"
-          element={<ResetPasswordConfirmPage />}
-        />
+      <Suspense fallback={
+        <div className="flex flex-col items-center justify-center h-screen space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Завантаження модуля...</p>
+        </div>
+      }>
+        <Routes>
+          {/* Публічні маршрути, які доступні без авторизації) */}
+          <Route path="/forgot-password" element={<RequestResetPage />} />
+          <Route
+            path="/password-reset/:uid/:token"
+            element={<ResetPasswordConfirmPage />}
+          />
 
-        {/* Сторінка 500 доступна завжди, щоб показати помилку сервера */}
-        <Route path="/server-error" element={<ServerError />} />
+          {/* Сторінка 500 доступна завжди, щоб показати помилку сервера */}
+          <Route path="/server-error" element={<ServerError />} />
 
-        {/* Марштур авторизації/головної сторінки */}
-        {/* Якщо юзер Є -> показуємо додаток. Якщо НЕМАЄ -> показуємо логін */}
-        <Route
-          path="/"
-          element={
-            user ? <MainAppLayout /> : <AuthPage onAuth={handleAuthSuccess} />
-          }
-        />
+          {/* Марштур авторизації/головної сторінки */}
+          {/* Якщо юзер Є -> показуємо додаток. Якщо НЕМАЄ -> показуємо логін */}
+          <Route
+            path="/"
+            element={
+              user ? <MainAppLayout /> : <AuthPage onAuth={handleAuthSuccess} />
+            }
+          />
 
-        {/* Якщо ввели адресу, якої не існує ні в API, ні в роутері */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Якщо ввели адресу, якої не існує ні в API, ні в роутері */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

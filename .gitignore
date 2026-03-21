@@ -39,3 +39,6 @@ Thumbs.db
 pdoc_init.py
 docs/backend_html/
 docs/frontend_html/
+
+# Звіти про аналіз бандла
+frontend/bundle-stats.html

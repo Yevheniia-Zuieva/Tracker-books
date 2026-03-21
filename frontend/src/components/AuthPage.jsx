@@ -512,3 +512,5 @@ export function AuthPage({ onAuth }) {
     </div>
   );
 }
+
+export default AuthPage;
