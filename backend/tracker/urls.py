@@ -6,7 +6,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
-from .views import BookViewSet, NoteViewSet, QuoteViewSet, ReadingSessionViewSet, ReadingStatsAPIView, UserProfileView
+from .views import BookViewSet, ExternalSearchAPIView, NoteViewSet, QuoteViewSet, ReadingSessionViewSet, ReadingStatsAPIView, UserProfileView
 
 router = DefaultRouter()
 router.register(r'books', BookViewSet, basename='book')
@@ -19,6 +19,8 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user-profile'), # Профіль
     path('stats/', ReadingStatsAPIView.as_view(), name='reading-stats'),
     path('logs/frontend/', views.frontend_log_view, name='frontend-logs'),
+    path('search/external/', ExternalSearchAPIView.as_view(), name='external-search'),
+    path('feedback/', views.FeedbackAPIView.as_view(), name='feedback'),
 ]
 
 handler404 = 'tracker.views.custom_404_view'

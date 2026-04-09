@@ -235,9 +235,9 @@ export const apiBooks = {
    * @param {string} filter - Фільтр пошуку (title, author, genre, all).
    * @returns {Promise<Array>} Результати пошуку.
    */
-  async searchExternal(query, filter) {
+  async searchExternal(query, filter, startIndex = 0) {
     const response = await API.get("/search/external/", {
-      params: { q: query, filter: filter },
+      params: { q: query, filter: filter, startIndex: startIndex },
     });
     return response.data.results;
   },
@@ -362,4 +362,11 @@ export const apiNotesQuotes = {
   async deleteQuote(quoteId) {
     await API.delete(`/quotes/${quoteId}/`);
   },
+};
+
+export const apiFeedback = {
+  async sendFeedback(message) {
+    const response = await API.post("/feedback/", { message });
+    return response.data;
+  }
 };

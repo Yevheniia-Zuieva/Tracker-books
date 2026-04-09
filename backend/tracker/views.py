@@ -7,6 +7,7 @@ import re  # Для очищення даних
 
 import requests
 from django.conf import settings
+from django.core.mail import send_mail
 from django.db.models import Avg, Count, Sum
 from django.db.models.functions import Coalesce, ExtractMonth
 from django.http import JsonResponse
@@ -356,6 +357,8 @@ class ExternalSearchAPIView(APIView):
         
         genre = volume_info.get('categories', ['Загальне'])[0]
         
+        language = volume_info.get('language', 'unknown')
+
         # Рік: витягуємо перші 4 цифри
         published_date = volume_info.get('publishedDate', '0000')
         year_str = published_date.split('-')[0]
@@ -368,6 +371,7 @@ class ExternalSearchAPIView(APIView):
             "title": title,
             "author": ", ".join(authors),
             "genre": genre,
+            "language": language,
             "year": year,
             "pages": pages,
             "description": description,
@@ -399,7 +403,8 @@ class ExternalSearchAPIView(APIView):
             
         query = request.query_params.get('q', '')
         search_filter = request.query_params.get('filter', 'all')
-        
+        start_index = request.query_params.get('startIndex', 0)
+
         if not query:
             return Response({"results": []})
         
@@ -423,6 +428,7 @@ class ExternalSearchAPIView(APIView):
         params = {
             'q': full_query,
             'maxResults': 20, 
+            'startIndex': start_index,
             'key': settings.GOOGLE_BOOKS_API_KEY,
             'langRestrict': 'uk|en'
         }
@@ -449,3 +455,31 @@ class ExternalSearchAPIView(APIView):
                 {"error": "Не вдалося підключитися до зовнішнього API пошуку."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )        
+
+#---Відгуки та пропозиції щодо покращення---
+class FeedbackAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        message_body = request.data.get('message')
+        if not message_body:
+            return Response({"error": "Повідомлення не може бути порожнім"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_email = request.user.email
+        subject = f"Новий відгук від {user_email} (Tracker Books)"
+        
+        # Формуємо текст листа
+        full_message = f"Користувач: {user_email}\n\nПовідомлення:\n{message_body}"
+
+        try:
+            send_mail(
+                subject,
+                full_message,
+                settings.DEFAULT_FROM_EMAIL, # Відправник 
+                [settings.EMAIL_HOST_USER],  # Отримувач 
+                fail_silently=False,
+            )
+            return Response({"status": "success", "message": "Відгук надіслано!"})
+        except Exception as e:
+            logger.error(f"Помилка відправки відгуку: {str(e)}")
+            return Response({"error": "Не вдалося надіслати лист"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
