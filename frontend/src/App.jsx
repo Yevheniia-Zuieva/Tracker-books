@@ -5,8 +5,9 @@
  */
 import { useState, useEffect, lazy, Suspense } from "react";
 import { apiAuth } from "./api/ApiService";
-import { Loader2, LogOut, User as UserIcon, Search } from "lucide-react";
-import { Button } from "./components/ui/button";
+import { Loader2 } from "lucide-react";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 import {
   BrowserRouter as Router,
   Routes,
@@ -15,7 +16,9 @@ import {
 
 const AuthPage = lazy(() => import('./components/AuthPage'));
 const HomePage = lazy(() => import('./components/HomePage'));
-const SearchPage = lazy(() => import('./components/SearchPage')); 
+const SearchPage = lazy(() => import('./components/SearchPage'));
+const AboutPage = lazy(() => import('./components/AboutPage'));
+const HelpPage = lazy(() => import('./components/HelpPage'));
 const RequestResetPage = lazy(() => import('./components/RequestResetPage')); 
 const ResetPasswordConfirmPage = lazy(() => import('./components/ResetPasswordConfirmPage')); 
 const NotFound = lazy(() => import('./components/NotFound')); 
@@ -126,67 +129,29 @@ function App() {
    */
   const MainAppLayout = () => (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Хедер */}
-      <header className="sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4 md:px-6">
-          {/* Логотип (клікабельний -> веде на Home) */}
-          <div
-            className="flex items-center gap-2 font-bold text-xl cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setCurrentView("home")}
-          >
-            <span>Tracker Books</span>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Кнопка Пошук книг */}
-            <Button
-              variant={currentView === "search" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setCurrentView("search")}
-              className="hidden md:flex"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Пошук книг
-            </Button>
-            {/* Мобільна версія кнопки пошуку */}
-            <Button
-              variant={currentView === "search" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setCurrentView("search")}
-              className="md:hidden"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                <UserIcon className="h-4 w-4" />
-              </div>
-              <span className="hidden md:inline">
-                {user.name || user.email}
-              </span>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              title="Вийти"
-            >
-              <LogOut className="h-4 w-4 text-red-500" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header 
+        user={user} 
+        currentView={currentView} 
+        onViewChange={setCurrentView} 
+        onLogout={handleLogout} 
+      />
 
       {/* Головний контент */}
       <main className="flex-1">
         {currentView === "home" ? (
           <HomePage onBookClick={handleBookClick} />
-        ) : (
+        ) : currentView === "search" ? (
           <SearchPage />
+        ) : currentView === "about" ? (
+          <AboutPage /> 
+        ) : currentView === "help" ? (
+          <HelpPage /> 
+        ) : (
+          <HomePage onBookClick={handleBookClick} /> 
         )}
       </main>
+
+      <Footer onViewChange={setCurrentView}/>
     </div>
   );
 
