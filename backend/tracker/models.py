@@ -103,9 +103,9 @@ class Book(models.Model):
     # Основні дані
     title = models.CharField(max_length=255, db_index=True)
     author = models.CharField(max_length=255, db_index=True)
-    genre = models.CharField(max_length=100)
+    genre = models.CharField(max_length=255)
     year = models.IntegerField(null=True, blank=True)
-    cover = models.ImageField(upload_to='book_covers/', null=True, blank=True)
+    cover = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     
     # Статус та прогрес
