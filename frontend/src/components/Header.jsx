@@ -50,7 +50,7 @@ export function Header({ user, currentView, onViewChange, onLogout }) {
               <UserIcon className="h-4 w-4" />
             </div>
             <span className="hidden md:inline">
-              {user.name || user.email}
+              {user?.username || user?.name || user?.email || "Користувач"}
             </span>
           </div>
 

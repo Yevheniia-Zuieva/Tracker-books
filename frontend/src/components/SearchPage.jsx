@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { 
   Search, PlusCircle, BookOpen, Loader2, 
-  BarChart3, Globe, Calendar, Layers, RotateCcw, Tag 
+  BarChart3, Globe, Calendar, Layers, RotateCcw, Tag, Star, 
+  
 } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -9,9 +10,6 @@ import { apiBooks } from "../api/ApiService";
 import { AddBookDialog } from "./AddBookDialog";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
 
-/**
- * Допоміжний компонент для відображення секцій фільтрів з баблами.
- */
 const FilterSection = ({ icon: Icon, title, items, current, onChange }) => (
   <div className="space-y-3">
     <h3 className="font-bold flex items-center gap-2 border-b pb-2 pt-2 text-sm">
@@ -44,7 +42,6 @@ export default function SearchPage() {
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [startIndex, setStartIndex] = useState(0);
 
-  // СТАНИ ФІЛЬТРАЦІЇ
   const [sortBy, setSortBy] = useState("relevance");
   const [selectedGenre, setSelectedGenre] = useState("all");
   const [selectedLang, setSelectedLang] = useState("all");
@@ -56,6 +53,9 @@ export default function SearchPage() {
     return ["all", ...Array.from(genres).sort()];
   }, [results]);
 
+  /**
+   * Обробник первинного пошуку.
+   */
   const handleSearch = async () => {
     if (!query.trim()) return;
     setIsLoading(true);
@@ -63,23 +63,49 @@ export default function SearchPage() {
     setStartIndex(0);
     try {
       const data = await apiBooks.searchExternal(query, filter, 0);
-      setResults(data);
+      const incoming = data.results || data;
+      
+      // Видаляємо дублікати навіть у першій пачці
+      const uniqueData = Array.from(new Map(incoming.map(item => [item.id, item])).values());
+      setResults(uniqueData);
     } catch (error) {
-      console.error("Помилка пошуку:", error);
+      if (error.response?.status === 503) {
+        alert("Сервіс Google Books тимчасово перевантажений. Спробуйте повторити пошук через хвилину або скористайтеся ручним додаванням.");
+      } else {
+        console.error("Помилка пошуку:", error);
+        alert("Сталася помилка при завантаженні результатів.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  /**
+   * Нові книги додаються лише якщо їх ID ще немає в списку.
+   */
   const handleLoadMore = async () => {
     const nextIndex = startIndex + 20;
     setIsLoading(true);
     try {
       const data = await apiBooks.searchExternal(query, filter, nextIndex);
-      setResults((prev) => [...prev, ...data]);
+      const incomingBooks = data.results || data;
+
+      setResults((prev) => {
+        // Створюємо Set з уже існуючих ID для швидкої перевірки
+        const existingIds = new Set(prev.map(b => b.id));
+        // Фільтруємо нові книги, залишаючи лише ті, яких ще немає
+        const newUniqueData = incomingBooks.filter(b => !existingIds.has(b.id));
+        
+        return [...prev, ...newUniqueData];
+      });
+      
       setStartIndex(nextIndex);
     } catch (error) {
-      console.error("Помилка пагінації:", error);
+      if (error.response?.status === 503) {
+        alert("Не вдалося завантажити більше результатів через обмеження сервісу Google. Будь ласка, зачекайте трохи.");
+      } else {
+        console.error("Помилка пагінації:", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -96,11 +122,32 @@ export default function SearchPage() {
   const processedResults = useMemo(() => {
     let list = [...results];
 
+    // Перевіряємо, чи є в обраному полі буквально те слово, що ввів користувач
+    if (query.trim()) {
+      const lowerQuery = query.toLowerCase();
+      list = list.filter((b) => {
+        if (filter === "title") return b.title?.toLowerCase().includes(lowerQuery);
+        if (filter === "author") return b.author?.toLowerCase().includes(lowerQuery);
+        if (filter === "genre") return b.genre?.toLowerCase().includes(lowerQuery);
+        if (filter === "all") {
+          // Якщо обрано "Усі поля", перевіряємо основні атрибути
+          return (
+            b.title?.toLowerCase().includes(lowerQuery) ||
+            b.author?.toLowerCase().includes(lowerQuery) ||
+            b.genre?.toLowerCase().includes(lowerQuery) ||
+            b.description?.toLowerCase().includes(lowerQuery)
+          );
+        }
+        return true;
+      });
+    }
+
     if (selectedLang !== "all") {
       list = list.filter(b => {
-        if (selectedLang === 'uk') return b.language === 'uk';
-        if (selectedLang === 'en') return b.language === 'en';
-        return b.language !== 'uk' && b.language !== 'en';
+        const lang = b.language?.toLowerCase() || 'unknown';
+        if (selectedLang === 'uk') return lang === 'uk';
+        if (selectedLang === 'en') return lang === 'en';
+        return lang !== 'uk' && lang !== 'en';
       });
     }
 
@@ -130,15 +177,23 @@ export default function SearchPage() {
     }
 
     return list;
-  }, [results, sortBy, selectedLang, selectedGenre, selectedPageRange, selectedDecade]);
+  }, [results, sortBy, selectedLang, selectedGenre, selectedPageRange, selectedDecade, query, filter]);
 
   const handleAddGoogleBook = async (book) => {
     if (!confirm(`Додати книгу "${book.title}" до бібліотеки?`)) return;
     try {
       await apiBooks.addBook({
-        title: book.title, author: book.author, genre: book.genre,
-        year: book.year, totalPages: book.pages, status: "want-to-read",
-        cover: book.cover, description: book.description,
+        title: book.title, 
+        author: book.author, 
+        genre: book.genre,
+        year: book.year, 
+        totalPages: book.pages, 
+        status: "want-to-read",
+        cover: book.cover, 
+        description: book.description,
+        externalRating: book.externalRating, 
+        ratingsCount: book.ratingsCount,
+        isCustom: false // Ознака, що книга з пошуку
       });
       alert("Додано!");
     } catch (error) {
@@ -149,7 +204,6 @@ export default function SearchPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-      {/* Пошуковий блок */}
       <div className="bg-card p-6 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-3 max-w-4xl mx-auto">
         <Input 
           placeholder="Назва, автор або жанр..." 
@@ -179,7 +233,6 @@ export default function SearchPage() {
         {results.length > 0 && (
           <aside className="w-full md:w-72 space-y-6 shrink-0">
             <div className="sticky top-20 space-y-6">
-              
               <Button 
                 variant="outline" 
                 className="w-full py-8 border-dashed border-primary/40 flex flex-col gap-2 hover:bg-primary/5 transition-all"
@@ -215,53 +268,10 @@ export default function SearchPage() {
                   ]}
                 />
 
-                <FilterSection 
-                  icon={Tag} 
-                  title="Жанри" 
-                  current={selectedGenre}
-                  onChange={setSelectedGenre}
-                  items={availableGenres.map(g => ({ id: g, label: g === 'all' ? 'Всі' : g }))}
-                />
-
-                <FilterSection 
-                  icon={Globe} 
-                  title="Мова" 
-                  current={selectedLang}
-                  onChange={setSelectedLang}
-                  items={[
-                    { id: 'all', label: 'Всі' },
-                    { id: 'uk', label: 'Українська' },
-                    { id: 'en', label: 'Англійська' },
-                    { id: 'others', label: 'Інші' },
-                  ]}
-                />
-
-                <FilterSection 
-                  icon={Layers} 
-                  title="Обсяг" 
-                  current={selectedPageRange}
-                  onChange={setSelectedPageRange}
-                  items={[
-                    { id: 'all', label: 'Всі' },
-                    { id: 'short', label: 'Короткі' },
-                    { id: 'medium', label: 'Середні' },
-                    { id: 'long', label: 'Великі' },
-                  ]}
-                />
-
-                <FilterSection 
-                  icon={Calendar} 
-                  title="Період" 
-                  current={selectedDecade}
-                  onChange={setSelectedDecade}
-                  items={[
-                    { id: 'all', label: 'Будь-який' },
-                    { id: '2020', label: '2020-ті' },
-                    { id: '2010', label: '2010-ті' },
-                    { id: '2000', label: '2000-ні' },
-                    { id: '1990', label: '1990-ті' },
-                  ]}
-                />
+                <FilterSection icon={Tag} title="Жанри" current={selectedGenre} onChange={setSelectedGenre} items={availableGenres.map(g => ({ id: g, label: g === 'all' ? 'Всі' : g }))} />
+                <FilterSection icon={Globe} title="Мова" current={selectedLang} onChange={setSelectedLang} items={[{ id: 'all', label: 'Всі' }, { id: 'uk', label: 'Українська' }, { id: 'en', label: 'Англійська' }, { id: 'others', label: 'Інші' }]} />
+                <FilterSection icon={Layers} title="Обсяг" current={selectedPageRange} onChange={setSelectedPageRange} items={[{ id: 'all', label: 'Всі' }, { id: 'short', label: 'Короткі' }, { id: 'medium', label: 'Середні' }, { id: 'long', label: 'Великі' }]} />
+                <FilterSection icon={Calendar} title="Період" current={selectedDecade} onChange={setSelectedDecade} items={[{ id: 'all', label: 'Будь-який' }, { id: '2020', label: '2020-ті' }, { id: '2010', label: '2010-ті' }, { id: '2000', label: '2000-ні' }, { id: '1990', label: '1990-ті' }]} />
               </div>
             </div>
           </aside>
@@ -276,14 +286,24 @@ export default function SearchPage() {
                     <ImageWithFallback src={book.cover} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 flex flex-col justify-between min-w-0">
-                    <div>
+                    <div className="space-y-1">
                       <h3 className="font-bold text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors">{book.title}</h3>
                       <p className="text-[11px] text-muted-foreground truncate mt-1 italic">{book.author}</p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="text-[9px] bg-secondary px-1.5 py-0.5 rounded font-bold uppercase">{book.language}</span>
-                        {book.genre && <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{book.genre}</span>}
+                      
+                      <div className="flex items-center gap-2 mt-1">
+                        {book.externalRating ? (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                            <span className="text-[10px] font-bold">{book.externalRating}</span>
+                            <span className="text-[9px] text-muted-foreground">({book.ratingsCount})</span>
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground">Немає оцінок</span>
+                        )}
+                        <span className="text-[9px] bg-secondary/50 px-1.5 py-0.5 rounded uppercase font-bold text-secondary-foreground">{book.language}</span>
                       </div>
                     </div>
+                    
                     <Button variant="outline" size="sm" className="mt-3 w-full h-8 text-xs" onClick={() => handleAddGoogleBook(book)}>
                       <PlusCircle className="h-3 w-3 mr-2" /> Додати
                     </Button>
@@ -302,7 +322,7 @@ export default function SearchPage() {
           )}
         </div>
       </div>
-      <AddBookDialog isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} />
+      <AddBookDialog isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} onBookAdded={() => {}} />
     </div>
   );
 }
