@@ -366,6 +366,10 @@ class ExternalSearchAPIView(APIView):
         
         pages = volume_info.get('pageCount', 0)
         
+        #Рейтинг та кількість голосів
+        external_rating = volume_info.get('averageRating')
+        ratings_count = volume_info.get('ratingsCount')
+
         return {
             "id": item['id'], # Використовуємо Google ID як зовнішній ID
             "title": title,
@@ -376,6 +380,10 @@ class ExternalSearchAPIView(APIView):
             "pages": pages,
             "description": description,
             "cover": cover,
+            "externalRating": external_rating, 
+            "ratingsCount": ratings_count,
+            "isCustom": False,  # Оскільки це результат з Google API
+            "isFavorite": False
         }
 
     def get(self, request, *args, **kwargs):

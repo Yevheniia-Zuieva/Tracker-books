@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     # Адміністративний інтерфейс
@@ -29,6 +30,9 @@ urlpatterns = [
     
     # Інтерактивний інтерфейс Swagger
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+    # Оновлення JWT токенів
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 if settings.DEBUG:
