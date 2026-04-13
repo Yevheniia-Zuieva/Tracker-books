@@ -108,6 +108,11 @@ class Book(models.Model):
     cover = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     
+    isFavorite = models.BooleanField(default=False)
+    isCustom = models.BooleanField(default=False)
+    externalRating = models.FloatField(null=True, blank=True) # Рейтинг Google
+    ratingsCount = models.IntegerField(null=True, blank=True) # Кількість голосів для рейтингу Google
+
     # Статус та прогрес
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='want-to-read')
     rating = models.IntegerField(null=True, blank=True, choices=[(i, i) for i in range(1, 6)])

@@ -70,9 +70,11 @@ class BookSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'title', 'author', 'genre', 'year', 'rating', 'status', 
             'progress', 'totalPages', 'currentPage', 'cover', 'addedDate', 
-            'description', 'note', 'startDate', 'endDate', 'readingSessions'
+            'description', 'note', 'startDate', 'endDate', 'readingSessions',
+            'isFavorite', 'externalRating', 'ratingsCount', 'isCustom'
+
         )
-        read_only_fields = ('progress',) 
+        read_only_fields = ('progress', 'addedDate') 
 
 class NoteSerializer(serializers.ModelSerializer):
     """Серіалізатор для користувацьких нотаток до книг.
