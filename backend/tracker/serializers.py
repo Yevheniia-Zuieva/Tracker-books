@@ -41,6 +41,27 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'username', 'bio', 'yearly_goal', 'avatar', 'date_joined', 'status')
         read_only_fields = ('email', 'date_joined', 'status')
 
+
+class QuoteSerializer(serializers.ModelSerializer):
+    """Серіалізатор для збережених цитат із книг.
+
+    Додатково отримує назву та автора пов'язаної книги.
+
+    Attributes:
+        bookTitle (CharField): Назва книги (лише для читання).
+        bookAuthor (CharField): Автор книги (лише для читання).
+
+    """
+
+    bookTitle = serializers.CharField(source='book.title', read_only=True)
+    bookAuthor = serializers.CharField(source='book.author', read_only=True)
+    
+    class Meta:
+        model = Quote
+        fields = ('id', 'book', 'bookTitle', 'bookAuthor', 'content', 'createdAt', 'isFavorite')
+        read_only_fields = ('bookTitle', 'bookAuthor', 'createdAt')
+        
+        
 class ReadingSessionSerializer(serializers.ModelSerializer):
     """Серіалізатор для сесій читання.
 
@@ -64,14 +85,15 @@ class BookSerializer(serializers.ModelSerializer):
     """
 
     readingSessions = ReadingSessionSerializer(many=True, read_only=True, source='reading_sessions') 
-    
+    book_quotes = QuoteSerializer(many=True, read_only=True)
+
     class Meta:
         model = Book
         fields = (
             'id', 'title', 'author', 'genre', 'year', 'rating', 'status', 
             'progress', 'totalPages', 'currentPage', 'cover', 'addedDate', 
             'description', 'note', 'startDate', 'endDate', 'readingSessions',
-            'isFavorite', 'externalRating', 'ratingsCount', 'isCustom'
+            'book_quotes','isFavorite', 'externalRating', 'ratingsCount', 'isCustom'
 
         )
         read_only_fields = ('progress', 'addedDate') 
@@ -95,21 +117,3 @@ class NoteSerializer(serializers.ModelSerializer):
         fields = ('id', 'book', 'bookTitle', 'bookAuthor', 'content', 'createdAt', 'isFavorite')
         read_only_fields = ('bookTitle', 'bookAuthor', 'createdAt')
 
-class QuoteSerializer(serializers.ModelSerializer):
-    """Серіалізатор для збережених цитат із книг.
-
-    Додатково отримує назву та автора пов'язаної книги.
-
-    Attributes:
-        bookTitle (CharField): Назва книги (лише для читання).
-        bookAuthor (CharField): Автор книги (лише для читання).
-
-    """
-
-    bookTitle = serializers.CharField(source='book.title', read_only=True)
-    bookAuthor = serializers.CharField(source='book.author', read_only=True)
-    
-    class Meta:
-        model = Quote
-        fields = ('id', 'book', 'bookTitle', 'bookAuthor', 'content', 'createdAt', 'isFavorite')
-        read_only_fields = ('bookTitle', 'bookAuthor', 'createdAt')

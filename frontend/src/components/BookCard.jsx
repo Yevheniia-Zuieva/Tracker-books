@@ -9,10 +9,12 @@ import { Card, CardContent } from "./ui/card";
 import { Textarea } from "./ui/textarea";
 import { Star, Heart, FileText, Save, Trash2, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
+import { useNavigate } from "react-router-dom";
 
-export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, onDelete, onNoteUpdate }) {
+export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, onDelete, onNoteUpdate}) {
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [noteText, setNoteText] = useState(book.note || "");
+  const navigate = useNavigate();
 
   const getActionConfig = () => {
     switch (book.status) {
@@ -35,8 +37,21 @@ export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, 
     setIsEditingNote(false);
   };
 
+  const handleCardClick = () => {
+    // 1. Спочатку робимо перехід по URL
+    navigate(`/books/${book.id}`);
+    
+    // 2. Якщо HomePage передав onBookClick (наприклад, для логування), викликаємо його
+    if (onBookClick) {
+      onBookClick(book);
+    }
+  };
+
   return (
-    <Card className="relative hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary group bg-card overflow-hidden">
+    <Card 
+      onClick={handleCardClick} 
+      className="relative hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary group bg-card overflow-hidden"
+    >
       
       {/* Бейдж для кастомних книг */}
       {book.isCustom && (
@@ -163,7 +178,13 @@ export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, 
 
         {/* КНОПКА "ДЕТАЛЬНІШЕ" */}
         <div className="mt-4 pt-3 border-t border-border/50">
-          <Button variant="outline" size="sm" className="w-full h-8 text-xs font-bold" onClick={() => onBookClick(book)}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full h-8 text-xs font-bold" 
+            // Кнопка просто дублює клік по картці
+            onClick={(e) => { e.stopPropagation(); handleCardClick(); }}
+          >
             Детальніше про книгу
           </Button>
         </div>

@@ -8,7 +8,7 @@ import { apiAuth } from "./api/ApiService";
 import { Loader2 } from "lucide-react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 
 const AuthPage = lazy(() => import('./components/AuthPage'));
 const HomePage = lazy(() => import('./components/HomePage'));
@@ -19,31 +19,41 @@ const RequestResetPage = lazy(() => import('./components/RequestResetPage'));
 const ResetPasswordConfirmPage = lazy(() => import('./components/ResetPasswordConfirmPage')); 
 const NotFound = lazy(() => import('./components/NotFound')); 
 const ServerError = lazy(() => import('./components/ServerError'));
+const BookDetails = lazy(() => import('./components/BookDetails'));
 
-const MainAppLayout = ({ user, currentView, setCurrentView, handleLogout, onBookClick }) => (
-  <div className="min-h-screen bg-background text-foreground flex flex-col">
-    <Header 
-      user={user} 
-      currentView={currentView} 
-      onViewChange={setCurrentView} 
-      onLogout={handleLogout} 
-    />
-    <main className="flex-1">
-      {currentView === "home" ? (
-        <HomePage onBookClick={onBookClick} />
-      ) : currentView === "search" ? (
-        <SearchPage />
-      ) : currentView === "about" ? (
-        <AboutPage /> 
-      ) : currentView === "help" ? (
-        <HelpPage /> 
-      ) : (
-        <HomePage onBookClick={onBookClick} /> 
-      )}
-    </main>
-    <Footer onViewChange={setCurrentView}/>
-  </div>
-);
+const MainAppLayout = ({ user, currentView, setCurrentView, handleLogout }) => {
+  const navigate = useNavigate();
+
+  // Функція переходу на сторінку деталей конкретної книги
+  const handleBookClick = (book) => {
+    navigate(`/books/${book.id}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <Header 
+        user={user} 
+        currentView={currentView} 
+        onViewChange={setCurrentView} 
+        onLogout={handleLogout} 
+      />
+      <main className="flex-1">
+        {currentView === "home" ? (
+          <HomePage onBookClick={handleBookClick} />
+        ) : currentView === "search" ? (
+          <SearchPage />
+        ) : currentView === "about" ? (
+          <AboutPage /> 
+        ) : currentView === "help" ? (
+          <HelpPage /> 
+        ) : (
+          <HomePage onBookClick={handleBookClick} /> 
+        )}
+      </main>
+      <Footer onViewChange={setCurrentView}/>
+    </div>
+  );
+};
 
 function App() {
   const [user, setUser] = useState(null);
@@ -78,10 +88,6 @@ function App() {
     setUser(null);
   };
 
-  const handleBookClick = (book) => {
-    console.log("Клік по книзі:", book.title);
-  };
-
   if (isLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -101,6 +107,31 @@ function App() {
           <Route path="/forgot-password" element={<RequestResetPage />} />
           <Route path="/password-reset/:uid/:token" element={<ResetPasswordConfirmPage />} />
           <Route path="/server-error" element={<ServerError />} />
+          
+          {/* Маршрут для сторінки деталей книги */}
+          <Route 
+            path="/books/:id" 
+            element={
+              user ? (
+                <div className="min-h-screen bg-background text-foreground flex flex-col">
+                  <Header 
+                    user={user} 
+                    currentView={null} 
+                    onViewChange={setCurrentView} 
+                    onLogout={handleLogout} 
+                  />
+                  <main className="flex-1">
+                    <BookDetails />
+                  </main>
+                  <Footer onViewChange={setCurrentView}/>
+                </div>
+              ) : (
+                <AuthPage onAuth={handleAuthSuccess} />
+              )
+            } 
+          />
+
+          {/* Головний маршрут */}
           <Route
             path="/"
             element={
@@ -110,7 +141,6 @@ function App() {
                   currentView={currentView}
                   setCurrentView={setCurrentView}
                   handleLogout={handleLogout}
-                  onBookClick={handleBookClick}
                 />
               ) : (
                 <AuthPage onAuth={handleAuthSuccess} />

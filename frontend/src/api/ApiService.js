@@ -148,11 +148,10 @@ export const apiBooks = {
     const response = await API.get("/stats/");
     return response.data;
   },
-  async addSession(bookId, duration, note) {
+  async addSession(bookId, data) {
     const response = await API.post("/sessions/", {
       book: bookId,
-      duration: duration,
-      note: note || null,
+      ...data 
     });
     return response.data;
   },

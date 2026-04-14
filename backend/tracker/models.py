@@ -138,7 +138,7 @@ class Book(models.Model):
 
         # 1. Логування розрахунку прогресу (DEBUG рівень)
         if self.totalPages and self.currentPage and self.totalPages > 0:
-            self.progress = min(100, int((self.currentPage / self.totalPages) * 100))
+            self.progress = min(100, round((self.currentPage / self.totalPages) * 100))
         else:
             # Якщо сторінок 0, але книга в списку - це може бути помилка даних
             if self.totalPages == 0:
@@ -189,14 +189,14 @@ class ReadingSession(models.Model):
     Attributes:
         book (ForeignKey): Посилання на книгу, що читається (Book).
         date (DateField): Дата проведення сесії (встановлюється автоматично).
-        duration (IntegerField): Тривалість читання в хвилинах.
+        duration (IntegerField): Тривалість читання в секундах.
         note (TextField, optional): Короткий запис або думки щодо цієї конкретної сесії.
 
     """
 
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reading_sessions')
     date = models.DateField(auto_now_add=True)
-    duration = models.IntegerField(help_text="Тривалість у хвилинах")
+    duration = models.IntegerField(help_text="Тривалість у секундах")
     note = models.TextField(blank=True, null=True)
     
     def __str__(self):
