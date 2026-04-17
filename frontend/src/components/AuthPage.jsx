@@ -210,17 +210,17 @@ export function AuthPage({ onAuth }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md">
         {/* Логотип та заголовок */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2563eb] rounded-full mb-4 shadow-sm">
             <BookOpen className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-xl font-semibold text-slate-800 mb-1">
+          <h1 className="text-xl font-semibold text-foreground mb-1">
             Читацький Щоденник
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Ваш персональний трекер прочитаних книг
           </p>
         </div>
@@ -230,13 +230,13 @@ export function AuthPage({ onAuth }) {
           <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 mb-4 rounded-lg">
             <TabsTrigger
               value="login"
-              className="w-full flex items-center justify-center rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="rounded-lg text-slate-900 font-bold data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
             >
               Вхід
             </TabsTrigger>
             <TabsTrigger
               value="register"
-              className="w-full flex items-center justify-center rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="rounded-lg text-slate-900 font-bold data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-md transition-all"
             >
               Реєстрація
             </TabsTrigger>
@@ -244,12 +244,12 @@ export function AuthPage({ onAuth }) {
 
           {/* Форма Входу */}
           <TabsContent value="login">
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-xl shadow-slate-200/50 bg-card">
               <CardHeader className="space-y-1 pb-6">
                 <CardTitle className="text-xl font-bold text-left">
                   Вхід до акаунта
                 </CardTitle>
-                <CardDescription className="text-slate-500">
+                <CardDescription className="text-muted-foreground">
                   Введіть свої дані для входу в систему
                 </CardDescription>
               </CardHeader>
@@ -269,7 +269,7 @@ export function AuthPage({ onAuth }) {
                         id="login-email"
                         type="email"
                         placeholder="your@email.com"
-                        className="pl-10 bg-slate-50/50 border-slate-200 focus:ring-[#2563eb]"
+                        className="pl-10 bg-background/50 border-slate-200 focus:ring-[#2563eb]"
                         value={loginData.email}
                         onChange={(e) =>
                           setLoginData({ ...loginData, email: e.target.value })
@@ -288,7 +288,7 @@ export function AuthPage({ onAuth }) {
                         id="login-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Введіть пароль"
-                        className="pl-10 pr-10 bg-slate-50/50 border-slate-200"
+                        className="pl-10 pr-10 bg-background/50 border-slate-200"
                         value={loginData.password}
                         onChange={(e) =>
                           setLoginData({
@@ -360,12 +360,12 @@ export function AuthPage({ onAuth }) {
 
           {/* Форма Реєстрації */}
           <TabsContent value="register">
-            <Card className="border-slate-200 shadow-xl shadow-slate-200/50 bg-white">
+            <Card className="border-slate-200 shadow-xl shadow-slate-200/50 bg-card">
               <CardHeader className="space-y-1 pb-6">
                 <CardTitle className="text-xl font-bold text-left">
                   Створити акаунт
                 </CardTitle>
-                <CardDescription className="text-slate-500 text-left">
+                <CardDescription className="text-muted-foreground text-left">
                   Почніть вести свій читацький щоденник сьогодні
                 </CardDescription>
               </CardHeader>
@@ -383,7 +383,7 @@ export function AuthPage({ onAuth }) {
                         id="register-name"
                         type="text"
                         placeholder="Ваше ім'я"
-                        className="pl-10 bg-slate-50 border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
+                        className="pl-10 bg-background border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
                         value={registerData.name}
                         onChange={(e) =>
                           setRegisterData({
@@ -404,7 +404,7 @@ export function AuthPage({ onAuth }) {
                         id="register-email"
                         type="text"
                         placeholder="your@email.com"
-                        className="pl-10 bg-slate-50 border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
+                        className="pl-10 bg-background border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
                         value={registerData.email}
                         onChange={(e) =>
                           setRegisterData({
@@ -425,7 +425,7 @@ export function AuthPage({ onAuth }) {
                         id="register-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Створіть пароль"
-                        className="pl-10 pr-10 bg-slate-50 border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
+                        className="pl-10 pr-10 bg-background border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
                         value={registerData.password}
                         onChange={(e) =>
                           setRegisterData({
@@ -457,7 +457,7 @@ export function AuthPage({ onAuth }) {
                         id="confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Повторіть пароль"
-                        className="pl-10 pr-10 bg-slate-50 border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
+                        className="pl-10 pr-10 bg-background border-slate-200 focus:border-[#2563eb] focus:ring-[#2563eb]"
                         value={registerData.confirmPassword}
                         onChange={(e) =>
                           setRegisterData({

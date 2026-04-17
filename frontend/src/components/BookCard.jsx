@@ -11,7 +11,7 @@ import { Star, Heart, FileText, Save, Trash2, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
 import { useNavigate } from "react-router-dom";
 
-export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, onDelete, onNoteUpdate}) {
+export function BookCard({ book, onStatusChange, onToggleFavorite, onDelete, onNoteUpdate}) {
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [noteText, setNoteText] = useState(book.note || "");
   const navigate = useNavigate();
@@ -38,18 +38,13 @@ export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, 
   };
 
   const handleCardClick = () => {
-    // 1. Спочатку робимо перехід по URL
+    // Робимо перехід по URL
     navigate(`/books/${book.id}`);
-    
-    // 2. Якщо HomePage передав onBookClick (наприклад, для логування), викликаємо його
-    if (onBookClick) {
-      onBookClick(book);
-    }
   };
 
   return (
     <Card 
-      onClick={handleCardClick} 
+      //onClick={handleCardClick} 
       className="relative hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary group bg-card overflow-hidden"
     >
       
@@ -62,7 +57,7 @@ export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, 
 
       <CardContent className="p-4 flex flex-col h-full">
         {/* ОСНОВНА ІНФО */}
-        <div className="flex gap-4 cursor-pointer" onClick={() => onBookClick(book)}>
+        <div className="flex gap-4">
           <div className="w-24 h-32 flex-shrink-0 shadow-md rounded overflow-hidden border">
             <ImageWithFallback src={book.cover} alt={book.title} className="w-full h-full object-cover" />
           </div>
@@ -181,8 +176,7 @@ export function BookCard({ book, onBookClick, onStatusChange, onToggleFavorite, 
           <Button 
             variant="outline" 
             size="sm" 
-            className="w-full h-8 text-xs font-bold" 
-            // Кнопка просто дублює клік по картці
+            className="w-full h-8 text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-all" 
             onClick={(e) => { e.stopPropagation(); handleCardClick(); }}
           >
             Детальніше про книгу

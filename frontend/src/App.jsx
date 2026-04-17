@@ -1,15 +1,15 @@
 /**
  * @file Головний компонент додатку.
- * Відповідає за ініціалізацію, маршрутизацію (React Router), глобальний стан авторизації 
- * та відображення основного макета (Layout) з навігацією.
+ * Використовує декларативну маршрутизацію та Outlet для вкладених сторінок.
  */
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, useCallback } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { apiAuth } from "./api/ApiService";
 import { Loader2 } from "lucide-react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 
+// Ледаче завантаження сторінок для оптимізації швидкості
 const AuthPage = lazy(() => import('./components/AuthPage'));
 const HomePage = lazy(() => import('./components/HomePage'));
 const SearchPage = lazy(() => import('./components/SearchPage'));
@@ -21,36 +21,37 @@ const NotFound = lazy(() => import('./components/NotFound'));
 const ServerError = lazy(() => import('./components/ServerError'));
 const BookDetails = lazy(() => import('./components/BookDetails'));
 
-const MainAppLayout = ({ user, currentView, setCurrentView, handleLogout }) => {
-  const navigate = useNavigate();
-
-  // Функція переходу на сторінку деталей конкретної книги
-  const handleBookClick = (book) => {
-    navigate(`/books/${book.id}`);
-  };
+/**
+ * Основний макет застосунку для авторизованих користувачів.
+ */
+const MainAppLayout = ({ user, handleLogout }) => {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Header 
-        user={user} 
-        currentView={currentView} 
-        onViewChange={setCurrentView} 
-        onLogout={handleLogout} 
-      />
+      <Header user={user} onLogout={handleLogout} />
+      
       <main className="flex-1">
-        {currentView === "home" ? (
-          <HomePage onBookClick={handleBookClick} />
-        ) : currentView === "search" ? (
-          <SearchPage />
-        ) : currentView === "about" ? (
-          <AboutPage /> 
-        ) : currentView === "help" ? (
-          <HelpPage /> 
-        ) : (
-          <HomePage onBookClick={handleBookClick} /> 
-        )}
+        <Suspense fallback={
+          <div className="flex items-center justify-center p-20">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          </div>
+        }>
+          {/* Outlet автоматично рендерить HomePage, SearchPage тощо залежно від URL */}
+          <Outlet />
+        </Suspense>
       </main>
-      <Footer onViewChange={setCurrentView}/>
+
+      <Footer />
     </div>
   );
 };
@@ -58,13 +59,9 @@ const MainAppLayout = ({ user, currentView, setCurrentView, handleLogout }) => {
 function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState("home");
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  // Перевірка сесії при завантаженні або оновленні сторінки
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("access_token");
     if (token) {
       try {
@@ -76,7 +73,11 @@ function App() {
       }
     }
     setIsLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const handleAuthSuccess = (userData, token) => {
     localStorage.setItem("access_token", token);
@@ -104,49 +105,32 @@ function App() {
         </div>
       }>
         <Routes>
+          {/* Публічні маршрути (доступні без логіну) */}
           <Route path="/forgot-password" element={<RequestResetPage />} />
           <Route path="/password-reset/:uid/:token" element={<ResetPasswordConfirmPage />} />
           <Route path="/server-error" element={<ServerError />} />
           
-          {/* Маршрут для сторінки деталей книги */}
+          {/* Сторінка входу (якщо вже залогінений — редірект на головну) */}
           <Route 
-            path="/books/:id" 
-            element={
-              user ? (
-                <div className="min-h-screen bg-background text-foreground flex flex-col">
-                  <Header 
-                    user={user} 
-                    currentView={null} 
-                    onViewChange={setCurrentView} 
-                    onLogout={handleLogout} 
-                  />
-                  <main className="flex-1">
-                    <BookDetails />
-                  </main>
-                  <Footer onViewChange={setCurrentView}/>
-                </div>
-              ) : (
-                <AuthPage onAuth={handleAuthSuccess} />
-              )
-            } 
+            path="/login" 
+            element={!user ? <AuthPage onAuth={handleAuthSuccess} /> : <Navigate to="/" replace />} 
           />
 
-          {/* Головний маршрут */}
-          <Route
-            path="/"
-            element={
-              user ? (
-                <MainAppLayout 
-                  user={user}
-                  currentView={currentView}
-                  setCurrentView={setCurrentView}
-                  handleLogout={handleLogout}
-                />
-              ) : (
-                <AuthPage onAuth={handleAuthSuccess} />
-              )
-            }
-          />
+          {/* ЗАХИЩЕНІ МАРШРУТИ (Тільки для авторизованих користувачів) */}
+          <Route element={user ? <MainAppLayout user={user} handleLogout={handleLogout} /> : <Navigate to="/login" replace />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/books/:id" element={<BookDetails />} />
+            
+            {/* Сторінки-заглушки для майбутнього функціоналу */}
+            <Route path="/notes" element={<div className="p-20 text-center">Сторінка всіх нотаток (у розробці)</div>} />
+            <Route path="/quotes" element={<div className="p-20 text-center">Сторінка всіх цитат (у розробці)</div>} />
+            <Route path="/profile" element={<div className="p-20 text-center">Налаштування акаунту (у розробці)</div>} />
+          </Route>
+
+          {/* 404 - Сторінка не знайдена */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

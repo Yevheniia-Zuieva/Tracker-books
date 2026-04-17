@@ -8,7 +8,7 @@ import { apiBooks } from "../api/ApiService";
 import { Loader2, RotateCcw, ChevronUp, ChevronDown, Star, Tag, BookPlus } from "lucide-react";
 import { Button } from "./ui/button";
 
-function HomePage({ onBookClick }) {
+function HomePage() {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -211,8 +211,7 @@ function HomePage({ onBookClick }) {
                       {items.map(book => (
                         <BookCard 
                           key={book.id} 
-                          book={book} 
-                          onBookClick={onBookClick} 
+                          book={book}  
                           onStatusChange={handleStatusChange} 
                           onToggleFavorite={handleToggleFavorite} 
                           onDelete={handleDelete} 
@@ -231,7 +230,6 @@ function HomePage({ onBookClick }) {
                     <BookCard 
                       key={book.id} 
                       book={book} 
-                      onBookClick={onBookClick} 
                       onStatusChange={handleStatusChange} 
                       onToggleFavorite={handleToggleFavorite} 
                       onDelete={handleDelete} 

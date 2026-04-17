@@ -1,11 +1,11 @@
 import { Github, Heart, BookOpen } from "lucide-react";
+// ДОДАНО: Імпорт Link для навігації
+import { Link } from "react-router-dom";
 
 /**
- * Компонент підвалу (Footer), синхронізований за розміром із хедером.
- * @param {Object} props
- * @param {Function} props.onViewChange - Функція для перемикання екранів.
+ * Компонент підвалу (Footer), адаптований під React Router.
  */
-export function Footer({ onViewChange }) {
+export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -14,13 +14,14 @@ export function Footer({ onViewChange }) {
         
         {/* Логотип та копірайт */}
         <div className="flex items-center gap-4">
-          <div 
-            className="flex items-center gap-2 font-bold cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => onViewChange("home")}
+          {/* ЗМІНЕНО: div з onClick замінено на Link */}
+          <Link 
+            to="/" 
+            className="flex items-center gap-2 font-bold hover:opacity-80 transition-opacity"
           >
             <BookOpen className="h-5 w-5 text-primary" />
             <span className="hidden sm:inline text-sm">Tracker Books</span>
-          </div>
+          </Link>
           <p className="text-[12px] text-muted-foreground border-l pl-4 hidden md:block">
             © {currentYear} Всі права захищені
           </p>
@@ -36,18 +37,19 @@ export function Footer({ onViewChange }) {
         {/* Навігація */}
         <div className="flex items-center gap-4">
           <nav className="flex gap-4 text-sm font-medium">
-            <button 
-              onClick={() => onViewChange("about")}
+            {/* ЗМІНЕНО: button замінено на Link з відповідним шляхом */}
+            <Link 
+              to="/about"
               className="text-muted-foreground hover:text-primary transition-colors text-xs"
             >
               Про проєкт
-            </button>
-            <button 
-              onClick={() => onViewChange("help")}
+            </Link>
+            <Link 
+              to="/help"
               className="text-muted-foreground hover:text-primary transition-colors text-xs"
             >
               Допомога
-            </button>
+            </Link>
           </nav>
           
           <a 
