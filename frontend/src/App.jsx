@@ -20,7 +20,7 @@ const ResetPasswordConfirmPage = lazy(() => import('./components/ResetPasswordCo
 const NotFound = lazy(() => import('./components/NotFound')); 
 const ServerError = lazy(() => import('./components/ServerError'));
 const BookDetails = lazy(() => import('./components/BookDetails'));
-
+const AllNotesPage = lazy(() => import('./components/AllNotesPage'));
 /**
  * Основний макет застосунку для авторизованих користувачів.
  */
@@ -123,9 +123,9 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/books/:id" element={<BookDetails />} />
-            
+            <Route path="/notes" element={<AllNotesPage />} />
+
             {/* Сторінки-заглушки для майбутнього функціоналу */}
-            <Route path="/notes" element={<div className="p-20 text-center">Сторінка всіх нотаток (у розробці)</div>} />
             <Route path="/quotes" element={<div className="p-20 text-center">Сторінка всіх цитат (у розробці)</div>} />
             <Route path="/profile" element={<div className="p-20 text-center">Налаштування акаунту (у розробці)</div>} />
           </Route>

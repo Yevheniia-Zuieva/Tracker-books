@@ -2,7 +2,7 @@
  * @file Головна сторінка додатку (Бібліотека користувача).
  * Відповідає за завантаження, фільтрацію, сортування та відображення списку книг.
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { BookCard } from "./BookCard";
 import { apiBooks } from "../api/ApiService";
 import { Loader2, RotateCcw, ChevronUp, ChevronDown, Star, Tag, BookPlus } from "lucide-react";
@@ -11,57 +11,170 @@ import { Button } from "./ui/button";
 function HomePage() {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [stats, setStats] = useState({ all: 0, reading: 0, read: 0, want: 0, fav: 0 });
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
   const [currentFilter, setCurrentFilter] = useState("all"); 
   const [currentSort, setCurrentSort] = useState(null); 
+  const [nextPageUrl, setNextPageUrl] = useState(null);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const data = await apiBooks.getStats();
+      console.log("Статистика від сервера:", data);
+      
+      // МАПІНГ: перетворюємо ключі сервера у ключі фронтенду
+      setStats({
+        all: data.totalBooks || data.all || 0,
+        read: data.readCount || data.read || 0,
+        // Оскільки в складній статистиці поки немає reading/want, 
+        // беремо їх з результатів, якщо вони є
+        reading: data.reading || 0,
+        want: data.want || 0,
+        fav: data.fav || 0
+      });
+    } catch (error) {
+      console.error("Помилка статистики:", error);
+    }
+  } , []);
+
+  const loadBooks = useCallback(async (url = null, isNewFilter = false) => {
+  try {
+    if (isNewFilter) {
+        setIsLoading(true);
+      } else {
+        if (url) {
+          setIsMoreLoading(true);
+        } else {
+          setIsLoading(true);
+        }
+      }
+
+    // Готуємо параметри для сервера
+    const params = {};
+    if (currentFilter === 'favorite') {
+      params.isFavorite = 'true';
+    } else if (currentFilter !== 'all') {
+      params.status = currentFilter;
+    }
+
+    if (currentSort) {
+      params.sort = currentSort; // Передаємо ключ сортування
+    }
+
+    const data = await apiBooks.getAllBooks(url, params);
+    const fetchedResults = data.results || (Array.isArray(data) ? data : []);
+
+    setBooks(prev => {
+      // Якщо це новий фільтр — замінюємо список. Якщо "завантажити ще" — додаємо.
+      return (url && !isNewFilter) ? [...prev, ...fetchedResults] : fetchedResults;
+    });
+
+    setNextPageUrl(data.next || null);
+  } catch (error) {
+    console.error("Помилка:", error);
+  } finally {
+    setIsLoading(false);
+    setIsMoreLoading(false);
+  }
+} , [currentFilter, currentSort]);
 
   useEffect(() => {
-    loadBooks();
-  }, []);
-
-  const loadBooks = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiBooks.getAllBooks();
-      setBooks(Array.isArray(data) ? data : data.results || []);
-    } catch (error) {
-      console.error("Помилка завантаження:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadBooks(null, true);
+    loadStats();
+  }, [loadBooks, loadStats]);
 
   // --- ОБРОБНИКИ ПОДІЙ ---
   const handleStatusChange = async (id, nextStatus) => {
+    const book = books.find(b => b.id === id);
+    const oldStatus = book?.status;
+    
+    // Оптимістичне оновлення масиву книг
+    setBooks(prev => prev.map(b => b.id === id ? { ...b, status: nextStatus } : b));
+    
+    // Оптимістичне оновлення лічильників
+    setStats(prev => {
+      const newStats = { ...prev };
+      // Зменшуємо лічильник старого статусу
+      if (oldStatus === 'want-to-read') newStats.want--;
+      else if (oldStatus === 'reading') newStats.reading--;
+      else if (oldStatus === 'read') newStats.read--;
+      
+      // Збільшуємо лічильник нового статусу
+      if (nextStatus === 'want-to-read') newStats.want++;
+      else if (nextStatus === 'reading') newStats.reading++;
+      else if (nextStatus === 'read') newStats.read++;
+      
+      return newStats;
+    });
+
     try {
-      setBooks(prev => prev.map(b => b.id === id ? { ...b, status: nextStatus } : b));
       await apiBooks.updateBook(id, { status: nextStatus });
     } catch (error) {
       console.error("Помилка зміни статусу:", error);
-      loadBooks();
+      loadStats(); // У разі помилки перекачуємо точні цифри
     }
+  };
+
+  const counts = {
+    all: stats.all,
+    reading: stats.reading,
+    read: stats.read,
+    want: stats.want,
+    fav: stats.fav,
   };
 
   const handleToggleFavorite = async (id) => {
     const book = books.find(b => b.id === id);
     if (!book) return;
+    
+    const newFavState = !book.isFavorite;
+
+    // Оновлюємо список книг (щоб серце зафарбувалось миттєво)
+    setBooks(prev => prev.map(b => b.id === id ? { ...b, isFavorite: newFavState } : b));
+
+    // Оновлюємо лічильник "Улюблені"
+    setStats(prev => ({
+      ...prev,
+      fav: newFavState ? prev.fav + 1 : prev.fav - 1
+    }));
+
     try {
-      const newFav = !book.isFavorite;
-      setBooks(prev => prev.map(b => b.id === id ? { ...b, isFavorite: newFav } : b));
-      await apiBooks.updateBook(id, { isFavorite: newFav });
+      await apiBooks.updateBook(id, { isFavorite: newFavState });
     } catch (error) {
       console.error("Помилка улюбленого:", error);
-      loadBooks();
+      // У разі помилки на сервері — повертаємо точні цифри
+      loadStats();
     }
   };
 
   const handleDelete = async (book) => {
     if (window.confirm(`Видалити "${book.title}"?`)) {
+      // Зберігаємо дані для відкату лічильників у разі помилки
+      const oldStatus = book.status;
+      const wasFavorite = book.isFavorite;
+
+      // Оновлюємо UI (видаляємо з масиву)
+      setBooks(prev => prev.filter(b => b.id !== book.id));
+
+      // Оновлюємо лічильники
+      setStats(prev => {
+        const newStats = { ...prev, all: prev.all - 1 };
+        
+        if (oldStatus === 'want-to-read') newStats.want--;
+        else if (oldStatus === 'reading') newStats.reading--;
+        else if (oldStatus === 'read') newStats.read--;
+        
+        if (wasFavorite) newStats.fav--;
+        
+        return newStats;
+      });
+
       try {
         await apiBooks.deleteBook(book.id);
-        setBooks(prev => prev.filter(b => b.id !== book.id));
       } catch (error) {
         console.error("Помилка видалення:", error);
+        loadStats(); // Перекачуємо статистику, якщо видалення зірвалось
+        loadBooks(); // Повертаємо книгу в список
       }
     }
   };
@@ -77,44 +190,25 @@ function HomePage() {
 
   // --- ЛОГІКА ТРАНСФОРМАЦІЇ ---
   const { filteredBooks, groupedBooks } = useMemo(() => {
-    let list = [...books];
+  const list = Array.isArray(books) ? [...books] : [];
+  
+  // Групування за жанром 
+  let grouped = null;
+  if (currentSort === "genre") {
+    grouped = list.reduce((acc, book) => {
+      const genre = book.genre || "Без жанру";
+      if (!acc[genre]) acc[genre] = [];
+      acc[genre].push(book);
+      return acc;
+    }, {});
+    grouped = Object.fromEntries(Object.entries(grouped).sort());
+  }
 
-    if (currentFilter !== "all") {
-      list = currentFilter === "favorite" 
-        ? list.filter(b => b.isFavorite) 
-        : list.filter(b => b.status === currentFilter);
-    }
-
-    if (currentSort === "rating-desc") {
-      list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
-    } else if (currentSort === "rating-asc") {
-      list.sort((a, b) => (Number(a.rating) || 0) - (Number(b.rating) || 0));
-    }
-
-    let grouped = null;
-    if (currentSort === "genre") {
-      grouped = list.reduce((acc, book) => {
-        const genre = book.genre || "Без жанру";
-        if (!acc[genre]) acc[genre] = [];
-        acc[genre].push(book);
-        return acc;
-      }, {});
-      grouped = Object.fromEntries(Object.entries(grouped).sort());
-    }
-
-    return { filteredBooks: list, groupedBooks: grouped };
-  }, [books, currentFilter, currentSort]);
-
-  const counts = {
-    all: books.length,
-    reading: books.filter(b => b.status === "reading").length,
-    read: books.filter(b => b.status === "read").length,
-    want: books.filter(b => b.status === "want-to-read").length,
-    fav: books.filter(b => b.isFavorite).length,
-  };
+  return { filteredBooks: list, groupedBooks: grouped };
+}, [books, currentSort]);
 
   // --- ВІЗУАЛ ЗАВАНТАЖЕННЯ ---
-  if (isLoading) {
+  if (isLoading && books.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-muted-foreground">
         <Loader2 className="w-12 h-12 animate-spin mb-4 text-primary/60" />
@@ -186,7 +280,7 @@ function HomePage() {
       {/* ОСНОВНИЙ КОНТЕНТ */}
       <div className="min-h-[400px]">
         {/* Якщо в базі взагалі немає жодної книги */}
-        {books.length === 0 ? (
+        {books.length === 0 && !isLoading ? (
           <div className="text-center py-24 border-2 border-dashed rounded-[2rem] bg-muted/20 flex flex-col items-center gap-4">
             <div className="p-4 bg-background rounded-full shadow-sm">
               <BookPlus className="w-8 h-8 text-primary/40" />
@@ -253,6 +347,24 @@ function HomePage() {
             )}
           </>
         )}
+        {/* КНОПКА ЗАВАНТАЖИТИ ЩЕ */}
+      {nextPageUrl && (
+        <div className="flex justify-center pt-8">
+          <Button 
+            variant="outline" 
+            size="lg"
+            onClick={() => loadBooks(nextPageUrl)} 
+            disabled={isMoreLoading}
+            className="rounded-xl px-8 border-primary text-primary hover:bg-primary/5 shadow-sm"
+          >
+            {isMoreLoading ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Завантаження...</>
+            ) : (
+              "Завантажити ще 20 книг"
+            )}
+          </Button>
+        </div>
+      )}
       </div>
     </div>
   );

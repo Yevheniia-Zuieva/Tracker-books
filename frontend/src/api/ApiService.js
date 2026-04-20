@@ -82,7 +82,7 @@ API.interceptors.response.use(
 
         if (!refreshToken) {
           apiAuth.logout();
-          window.location.replace("/auth"); // Використовуємо replace для безпеки
+          window.location.replace("/login"); // Використовуємо replace для безпеки
           return Promise.reject(error);
         }
 
@@ -101,7 +101,7 @@ API.interceptors.response.use(
         } catch (refreshError) {
           console.warn("Refresh token expired. Logging out...");
           apiAuth.logout();
-          window.location.replace("/auth");
+          window.location.replace("/login");
           return Promise.reject(refreshError);
         }
       }
@@ -119,9 +119,10 @@ API.interceptors.response.use(
 
 // --- 4. СЕРВІС КНИГ ---
 export const apiBooks = {
-  async getAllBooks() {
-    const response = await API.get("/books/");
-    return response.data;
+  async getAllBooks(url = null, params = {}) {
+    const endpoint = url || "/books/"; 
+    const response = await API.get(endpoint, { params: url ? {} : params });
+    return response.data; 
   },
   async getBookDetail(bookId) {
     const response = await API.get(`/books/${bookId}/`);
@@ -142,7 +143,7 @@ export const apiBooks = {
     const response = await API.get("/search/external/", {
       params: { q: query, filter: filter, startIndex: startIndex },
     });
-    return response.data.results;
+    return response.data; 
   },
   async getStats() {
     const response = await API.get("/stats/");

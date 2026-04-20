@@ -8,13 +8,14 @@ import re  # Для очищення даних
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count, FloatField, Sum
 from django.db.models.functions import Coalesce, ExtractMonth
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status, viewsets
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -113,37 +114,43 @@ class BookViewSet(UserFilteredModelViewSet):
 
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    filter_fields = ['status', 'genre'] 
+    filter_fields = ['status', 'genre', 'isFavorite'] 
 
     def get_queryset(self):
-        """Отримує набір книг користувача із застосуванням сортування,
-        якщо вказано параметр запиту 'sort'.
-
-        Returns:
-            QuerySet: Відсортовані книги.
-
-        """
-        # Базова фільтрація по юзеру
+        """Отримує набір книг із застосуванням фільтрації та сортування на рівні БД."""
+        # Базова фільтрація по поточному юзеру
         queryset = super().get_queryset()
-
-        # ОПТИМІЗАЦІЯ БД: prefetch_related виправляє N+1 проблему
+        
+        # Оптимізація запитів
         queryset = queryset.prefetch_related('reading_sessions', 'book_notes', 'book_quotes')
-        
-        # Обробка сортування
-        sort_by = self.request.query_params.get('sort', None)
-        
-        if sort_by:
-            # Використовуємо безпечне отримання ID або "Anonymous"
-            u_id = self.request.user.id if self.request.user.is_authenticated else "Anonymous"
-            logger.debug(f"Sorting books for user {u_id} by {sort_by}")
 
-        # Повернення відсортованих даних
-        if sort_by == 'by-rating':
-            return queryset.order_by('-rating', 'title')
-        if sort_by == 'by-genre':
-            return queryset.order_by('genre', 'title')
+        # --- ЛОГІКА ФІЛЬТРАЦІЇ ---
+        # Отримуємо параметри з URL запиту
+        status_filter = self.request.query_params.get('status')
+        is_favorite_filter = self.request.query_params.get('isFavorite')
 
-        return queryset.order_by('-addedDate')
+        if status_filter:
+            # Фільтруємо за статусом (reading, read, want-to-read)
+            queryset = queryset.filter(status=status_filter)
+
+        if is_favorite_filter == 'true':
+            # Фільтруємо лише улюблені
+            queryset = queryset.filter(isFavorite=True)
+
+        # --- ЛОГІКА СОРТУВАННЯ ---
+        sort_by = self.request.query_params.get('sort')
+        
+        if sort_by == 'rating-desc':
+            queryset = queryset.order_by('-rating', 'title')
+        elif sort_by == 'rating-asc':
+            queryset = queryset.order_by('rating', 'title')
+        elif sort_by == 'genre':
+            queryset = queryset.order_by('genre', 'title')
+        else:
+            # За замовчуванням: спочатку нові додані
+            queryset = queryset.order_by('-addedDate')
+
+        return queryset
 
 class ReadingSessionViewSet(viewsets.ModelViewSet):
     """ViewSet для створення та перегляду сесій читання."""
@@ -244,14 +251,14 @@ class ReadingStatsAPIView(APIView):
         
         time_stats = ReadingSession.objects.filter(book__user=user).aggregate(
             total_duration_minutes=Coalesce(Sum('duration'), 0),
-            avg_duration_session=Coalesce(Avg('duration'), 0),
+            avg_duration_session=Coalesce(Avg('duration'), 0.0, output_field=FloatField()),
             total_sessions=Count('id')
         )
         
         page_stats = read_books.aggregate(
             total_pages_read=Coalesce(Sum('totalPages'), 0),
-            avg_rating=Coalesce(Avg('rating'), 0.0),
-            avg_pages_per_book=Coalesce(Avg('totalPages'), 0.0)
+            avg_rating=Coalesce(Avg('rating'), 0.0, output_field=FloatField()),
+            avg_pages_per_book=Coalesce(Avg('totalPages'), 0.0, output_field=FloatField())
         )
 
         genre_stats = all_books.values('genre').annotate(count=Count('genre')).order_by('-count')
@@ -296,7 +303,9 @@ class ReadingStatsAPIView(APIView):
             'genresCount': len(genre_stats),
             'totalPagesRead': page_stats['total_pages_read'],
             'averagePagesPerBook': round(page_stats['avg_pages_per_book'], 0),
-            
+            'reading': all_books.filter(status='reading').count(),
+            'want': all_books.filter(status='want-to-read').count(),
+            'fav': all_books.filter(isFavorite=True).count(),
             # Статистика часу
             'totalReadingTime': time_stats['total_duration_minutes'], 
             'totalReadingSessions': time_stats['total_sessions'],
@@ -309,6 +318,18 @@ class ReadingStatsAPIView(APIView):
             'authorStats': list(author_stats),
             'lastActivity': list(last_activity),
         })
+@api_view(['GET'])
+def get_stats(request):
+    """Повертає загальну кількість книг за категоріями для поточного користувача."""
+    user_books = Book.objects.filter(user=request.user)
+    data = {
+        'all': user_books.count(),
+        'reading': user_books.filter(status='reading').count(),
+        'read': user_books.filter(status='read').count(),
+        'want': user_books.filter(status='want-to-read').count(),
+        'fav': user_books.filter(isFavorite=True).count(),
+    }
+    return Response(data)
 
 # --- 7. Зовнішній пошук (ExternalSearchAPIView) ---
 class ExternalSearchAPIView(APIView):
