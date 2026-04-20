@@ -1,6 +1,11 @@
-"""Модуль містить серіалізатори для перетворення моделей бази даних
-у JSON-формат та навпаки для REST API.
 """
+Модуль описів серіалізаторів даних (DRF Serializers).
+
+Цей модуль визначає логіку перетворення складних типів даних (екземплярів моделей)
+у формат JSON для передачі клієнту та десеріалізації вхідних даних із валідацією.
+Включає кастомні мапінги полів для забезпечення сумісності з фронтендом (React).
+"""
+
 from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
 from rest_framework import serializers
 
@@ -20,8 +25,11 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
     re_password = serializers.CharField(write_only=True)
 
     class Meta(DjoserUserCreateSerializer.Meta):
+        """Мета-параметри серіалізатора реєстрації."""
+
         model = User
-        fields = ('id', 'email', 'username', 'password', 're_password')
+        fields = ("id", "email", "username", "password", "re_password")
+
 
 class UserSerializer(serializers.ModelSerializer):
     """Серіалізатор для профілю користувача.
@@ -30,16 +38,28 @@ class UserSerializer(serializers.ModelSerializer):
     щоб відповідати вимогам фронтенду (ProfilePage.tsx).
 
     Attributes:
-        status (CharField): Псевдонім для поля bio (лише для читання).
+        status (CharField):Псевдонім (alias) для поля `bio`. Дозволяє React-компонентам
+            використовувати назву 'status', фактично звертаючись до біографії користувача.
 
     """
 
-    status = serializers.CharField(source='bio', read_only=True) 
-    
+    status = serializers.CharField(source="bio", read_only=True)
+
     class Meta:
+        """Мета-дані профілю користувача."""
+
         model = User
-        fields = ('id', 'email', 'username', 'bio', 'yearly_goal', 'avatar', 'date_joined', 'status')
-        read_only_fields = ('email', 'date_joined', 'status')
+        fields = (
+            "id",
+            "email",
+            "username",
+            "bio",
+            "yearly_goal",
+            "avatar",
+            "date_joined",
+            "status",
+        )
+        read_only_fields = ("email", "date_joined", "status")
 
 
 class QuoteSerializer(serializers.ModelSerializer):
@@ -53,15 +73,25 @@ class QuoteSerializer(serializers.ModelSerializer):
 
     """
 
-    bookTitle = serializers.CharField(source='book.title', read_only=True)
-    bookAuthor = serializers.CharField(source='book.author', read_only=True)
-    
+    bookTitle = serializers.CharField(source="book.title", read_only=True)
+    bookAuthor = serializers.CharField(source="book.author", read_only=True)
+
     class Meta:
+        """Конфігурація полів цитати."""
+
         model = Quote
-        fields = ('id', 'book', 'bookTitle', 'bookAuthor', 'content', 'createdAt', 'isFavorite')
-        read_only_fields = ('bookTitle', 'bookAuthor', 'createdAt')
-        
-        
+        fields = (
+            "id",
+            "book",
+            "bookTitle",
+            "bookAuthor",
+            "content",
+            "createdAt",
+            "isFavorite",
+        )
+        read_only_fields = ("bookTitle", "bookAuthor", "createdAt")
+
+
 class ReadingSessionSerializer(serializers.ModelSerializer):
     """Серіалізатор для сесій читання.
 
@@ -69,34 +99,59 @@ class ReadingSessionSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
+        """Конфігурація сесії читання."""
+
         model = ReadingSession
-        fields = ('id', 'book', 'date', 'duration', 'note')
-        read_only_fields = ('date',) 
+        fields = ("id", "book", "date", "duration", "note")
+        read_only_fields = ("date",)
+
 
 class BookSerializer(serializers.ModelSerializer):
     """Серіалізатор для книг.
 
-    Включає всі основні поля книги, а також вкладені сесії читання, 
+    Включає всі основні поля книги, а також вкладені сесії читання,
     пов'язані з цією книгою.
 
     Attributes:
         readingSessions (ReadingSessionSerializer): Список пов'язаних сесій читання (лише для читання).
-
+        book_quotes (QuoteSerializer): Колекція збережених цитат до даної книги.
     """
 
-    readingSessions = ReadingSessionSerializer(many=True, read_only=True, source='reading_sessions') 
+    readingSessions = ReadingSessionSerializer(
+        many=True, read_only=True, source="reading_sessions"
+    )
     book_quotes = QuoteSerializer(many=True, read_only=True)
 
     class Meta:
+        """Мета-параметри книги з визначенням полів лише для читання."""
+
         model = Book
         fields = (
-            'id', 'title', 'author', 'genre', 'year', 'rating', 'status', 
-            'progress', 'totalPages', 'currentPage', 'cover', 'addedDate', 
-            'description', 'note', 'startDate', 'endDate', 'readingSessions',
-            'book_quotes','isFavorite', 'externalRating', 'ratingsCount', 'isCustom'
-
+            "id",
+            "title",
+            "author",
+            "genre",
+            "year",
+            "rating",
+            "status",
+            "progress",
+            "totalPages",
+            "currentPage",
+            "cover",
+            "addedDate",
+            "description",
+            "note",
+            "startDate",
+            "endDate",
+            "readingSessions",
+            "book_quotes",
+            "isFavorite",
+            "externalRating",
+            "ratingsCount",
+            "isCustom",
         )
-        read_only_fields = ('progress', 'addedDate') 
+        read_only_fields = ("progress", "addedDate")
+
 
 class NoteSerializer(serializers.ModelSerializer):
     """Серіалізатор для користувацьких нотаток до книг.
@@ -109,11 +164,20 @@ class NoteSerializer(serializers.ModelSerializer):
 
     """
 
-    bookTitle = serializers.CharField(source='book.title', read_only=True)
-    bookAuthor = serializers.CharField(source='book.author', read_only=True)
-    
-    class Meta:
-        model = Note
-        fields = ('id', 'book', 'bookTitle', 'bookAuthor', 'content', 'createdAt', 'isFavorite')
-        read_only_fields = ('bookTitle', 'bookAuthor', 'createdAt')
+    bookTitle = serializers.CharField(source="book.title", read_only=True)
+    bookAuthor = serializers.CharField(source="book.author", read_only=True)
 
+    class Meta:
+        """Конфігурація полів нотатки."""
+
+        model = Note
+        fields = (
+            "id",
+            "book",
+            "bookTitle",
+            "bookAuthor",
+            "content",
+            "createdAt",
+            "isFavorite",
+        )
+        read_only_fields = ("bookTitle", "bookAuthor", "createdAt")

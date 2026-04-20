@@ -1,9 +1,20 @@
-"""Модуль містить представлення (views) для обробки запитів API.
-Включає CRUD операції для моделей, статистику та інтеграцію з зовнішнім API.
 """
+Модуль обробників запитів (Views) для REST API застосунку Tracker Books.
+
+Цей модуль реалізує бізнес-логіку системи через набір ViewSets та APIViews.
+Він забезпечує:
+1. Повний цикл CRUD для книг, нотаток, цитат та сесій читання.
+2. Складну агрегаційну статистику (аналітику) активності користувача.
+3. Проксі-інтеграцію з Google Books API для пошуку літератури.
+4. Механізми телеметрії (збір логів із фронтенду) та зворотного зв'язку.
+
+Всі обробники використовують систему дозволів (Permissions) для гарантування
+доступу користувачів виключно до власних даних.
+"""
+
 import json
 import logging
-import re  # Для очищення даних
+import re
 
 import requests
 from django.conf import settings
@@ -22,30 +33,41 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Book, Note, Quote, ReadingSession
-from .serializers import BookSerializer, NoteSerializer, QuoteSerializer, ReadingSessionSerializer, UserSerializer
+from .serializers import (
+    BookSerializer,
+    NoteSerializer,
+    QuoteSerializer,
+    ReadingSessionSerializer,
+    UserSerializer,
+)
 
 
 def custom_404_view(request, exception):
-    return render(request, '404.html', status=404)
+    """Рендерить кастомну сторінку помилки 404 (Not Found)."""
+    return render(request, "404.html", status=404)
+
 
 def custom_500_view(request):
-    return render(request, '500.html', status=500)
+    """Рендерить кастомну сторінку критичної помилки 500 (Server Error)."""
+    return render(request, "500.html", status=500)
+
 
 # Ініціалізуємо логер для цього модуля
-logger = logging.getLogger('tracker')
+logger = logging.getLogger("tracker")
 
-frontend_logger = logging.getLogger('frontend')
+frontend_logger = logging.getLogger("frontend")
 
-@csrf_exempt  # Дозволяємо запити без CSRF-токена для цього логера
+
+@csrf_exempt
 def frontend_log_view(request):
     """
     Обробник для збору та фіксації помилок, що виникають на стороні клієнта (React).
-    
-    Метод приймає POST-запити з JSON-даними про інцидент, структурує їх 
-    та записує у системний лог-файл бекенду. 
 
-    Декоратор @csrf_exempt використовується, оскільки логування помилок 
-    має працювати безперебійно, навіть якщо сесія користувача недійсна 
+    Метод приймає POST-запити з JSON-даними про інцидент, структурує їх
+    та записує у системний лог-файл бекенду.
+
+    Декоратор @csrf_exempt використовується, оскільки логування помилок
+    має працювати безперебійно, навіть якщо сесія користувача недійсна
     або виникли проблеми з CSRF-токеном.
 
     Args:
@@ -58,10 +80,10 @@ def frontend_log_view(request):
             - user (str): Email користувача або 'anonymous'.
 
     Returns:
-        JsonResponse: Статус 'ok' (200) при успішному логуванні 
+        JsonResponse: Статус 'ok' (200) при успішному логуванні
                       або 'error' (400) при некоректних даних.
     """
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             data = json.loads(request.body)
             # Формуємо красивий запис у файл tracker_books.log
@@ -73,13 +95,16 @@ def frontend_log_view(request):
                 f"Stack: {data.get('stack')}\n"
                 f"-----------------------"
             )
-            return JsonResponse({'status': 'ok'})
+            return JsonResponse({"status": "ok"})
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    return JsonResponse({'status': 'method not allowed'}, status=405)
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+    return JsonResponse({"status": "method not allowed"}, status=405)
+
 
 class UserFilteredModelViewSet(viewsets.ModelViewSet):
     """Базовий ViewSet, який обмежує доступ до об'єктів лише їх автору.
+    Забезпечує ізоляцію даних: кожен авторизований користувач бачить
+    і редагує лише ті об'єкти, які він створив.
 
     Attributes:
         permission_classes (list): Перелік класів дозволів (тільки авторизовані).
@@ -105,59 +130,82 @@ class UserFilteredModelViewSet(viewsets.ModelViewSet):
 
         """
         serializer.save(user=self.request.user)
-        logger.info(f"User {self.request.user.id} created a new {self.queryset.model.__name__}")
+        logger.info(
+            f"User {self.request.user.id} created a new {self.queryset.model.__name__}"
+        )
+
 
 class BookViewSet(UserFilteredModelViewSet):
     """ViewSet для управління книгами користувача (CRUD операції).
-    Підтримує сортування за рейтингом, жанром або датою додавання.
+    Реалізує складну логіку серверної фільтрації та сортування.
+    Використовує `prefetch_related` для оптимізації SQL-запитів до
+    пов'язаних сутностей (сесій, нотаток).
     """
 
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    filter_fields = ['status', 'genre', 'isFavorite'] 
+    filter_fields = ["status", "genre", "isFavorite"]
 
     def get_queryset(self):
-        """Отримує набір книг із застосуванням фільтрації та сортування на рівні БД."""
+        """
+        Розширена логіка отримання книг з урахуванням параметрів URL.
+
+        Підтримує:
+        - Фільтрацію за `status` та `isFavorite`.
+        - Сортування за рейтингом (`rating-desc/asc`) та жанром.
+        - Префетчинг для уникнення N+1 при серіалізації вкладених даних.
+        """
+
         # Базова фільтрація по поточному юзеру
         queryset = super().get_queryset()
-        
+
         # Оптимізація запитів
-        queryset = queryset.prefetch_related('reading_sessions', 'book_notes', 'book_quotes')
+        queryset = queryset.prefetch_related(
+            "reading_sessions", "book_notes", "book_quotes"
+        )
 
         # --- ЛОГІКА ФІЛЬТРАЦІЇ ---
-        # Отримуємо параметри з URL запиту
-        status_filter = self.request.query_params.get('status')
-        is_favorite_filter = self.request.query_params.get('isFavorite')
+        # Параметри з URL запиту
+        status_filter = self.request.query_params.get("status")
+        is_favorite_filter = self.request.query_params.get("isFavorite")
 
         if status_filter:
-            # Фільтруємо за статусом (reading, read, want-to-read)
+            # Фільтрація за статусом (reading, read, want-to-read)
             queryset = queryset.filter(status=status_filter)
 
-        if is_favorite_filter == 'true':
-            # Фільтруємо лише улюблені
+        if is_favorite_filter == "true":
+            # Фільтрація лише улюблених книг
             queryset = queryset.filter(isFavorite=True)
 
         # --- ЛОГІКА СОРТУВАННЯ ---
-        sort_by = self.request.query_params.get('sort')
-        
-        if sort_by == 'rating-desc':
-            queryset = queryset.order_by('-rating', 'title')
-        elif sort_by == 'rating-asc':
-            queryset = queryset.order_by('rating', 'title')
-        elif sort_by == 'genre':
-            queryset = queryset.order_by('genre', 'title')
+        sort_by = self.request.query_params.get("sort")
+
+        if sort_by == "rating-desc":
+            queryset = queryset.order_by("-rating", "title")
+        elif sort_by == "rating-asc":
+            queryset = queryset.order_by("rating", "title")
+        elif sort_by == "genre":
+            queryset = queryset.order_by("genre", "title")
         else:
             # За замовчуванням: спочатку нові додані
-            queryset = queryset.order_by('-addedDate')
+            queryset = queryset.order_by("-addedDate")
 
         return queryset
 
+
 class ReadingSessionViewSet(viewsets.ModelViewSet):
-    """ViewSet для створення та перегляду сесій читання."""
+    """
+    Управління сесіями читання.
+
+    Включає логіку автоматичної зміни статусу книги на 'reading'
+    при створенні першої сесії.
+    """
 
     queryset = ReadingSession.objects.all()
     serializer_class = ReadingSessionSerializer
-    permission_classes = [IsAuthenticated]# Дозволяємо доступ для всіх, але фільтруємо дані за користувачем
+    permission_classes = [
+        IsAuthenticated
+    ]  # Дозволяємо доступ для всіх, але фільтруємо дані за користувачем
 
     def get_queryset(self):
         """Отримує сесії читання лише для книг, що належать поточному користувачу.
@@ -174,39 +222,48 @@ class ReadingSessionViewSet(viewsets.ModelViewSet):
 
         Args:
             serializer: Серіалізатор з даними сесії.
-            
+
         Raises:
             PermissionDenied: Якщо користувач намагається додати сесію до чужої книги.
 
         """
-        book = serializer.validated_data.get('book')
-        
+        book = serializer.validated_data.get("book")
+
         if book.user != self.request.user:
-            logger.warning(f"Unauthorized access attempt: User {self.request.user.id} tried to add session to book {book.id}")
-            raise PermissionDenied("Ви не можете додавати сесії до книги, яка вам не належить.")
+            logger.warning(
+                f"Unauthorized access attempt: User {self.request.user.id} tried to add session to book {book.id}"
+            )
+            raise PermissionDenied(
+                "Ви не можете додавати сесії до книги, яка вам не належить."
+            )
 
         # Оновлення статусу книги, якщо вона була 'want-to-read'
-        if book.status == 'want-to-read':
-            book.status = 'reading'
-            book.save() # Викликає save, що оновить прогрес
-            logger.info(f"Book status updated to 'reading' for book {book.id} (User {self.request.user.id})")
-            
+        if book.status == "want-to-read":
+            book.status = "reading"
+            book.save()  # Викликає save, що оновить прогрес
+            logger.info(
+                f"Book status updated to 'reading' for book {book.id} (User {self.request.user.id})"
+            )
+
         serializer.save()
         logger.info(f"New reading session added for book {book.id}")
+
 
 class NoteViewSet(UserFilteredModelViewSet):
     """ViewSet для управління нотатками користувача."""
 
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    filter_fields = ['isFavorite']
+    filter_fields = ["isFavorite"]
+
 
 class QuoteViewSet(UserFilteredModelViewSet):
     """ViewSet для управління цитатами користувача."""
 
     queryset = Quote.objects.all()
     serializer_class = QuoteSerializer
-    filter_fields = ['isFavorite']
+    filter_fields = ["isFavorite"]
+
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """API View для перегляду та оновлення профілю поточного користувача."""
@@ -222,6 +279,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
         """
         return self.request.user
+
 
 class ReadingStatsAPIView(APIView):
     """API View для отримання детальної статистики читання користувача."""
@@ -243,107 +301,146 @@ class ReadingStatsAPIView(APIView):
 
         user = request.user
         current_year = timezone.now().year
-        
+
         all_books = Book.objects.filter(user=user)
-        read_books = all_books.filter(status='read')
-        
+        read_books = all_books.filter(status="read")
+
         read_this_year_count = read_books.filter(endDate__year=current_year).count()
-        
+
         time_stats = ReadingSession.objects.filter(book__user=user).aggregate(
-            total_duration_minutes=Coalesce(Sum('duration'), 0),
-            avg_duration_session=Coalesce(Avg('duration'), 0.0, output_field=FloatField()),
-            total_sessions=Count('id')
+            total_duration_minutes=Coalesce(Sum("duration"), 0),
+            avg_duration_session=Coalesce(
+                Avg("duration"), 0.0, output_field=FloatField()
+            ),
+            total_sessions=Count("id"),
         )
-        
+
         page_stats = read_books.aggregate(
-            total_pages_read=Coalesce(Sum('totalPages'), 0),
-            avg_rating=Coalesce(Avg('rating'), 0.0, output_field=FloatField()),
-            avg_pages_per_book=Coalesce(Avg('totalPages'), 0.0, output_field=FloatField())
+            total_pages_read=Coalesce(Sum("totalPages"), 0),
+            avg_rating=Coalesce(Avg("rating"), 0.0, output_field=FloatField()),
+            avg_pages_per_book=Coalesce(
+                Avg("totalPages"), 0.0, output_field=FloatField()
+            ),
         )
 
-        genre_stats = all_books.values('genre').annotate(count=Count('genre')).order_by('-count')
-        
-        author_stats = all_books.values('author').annotate(count=Count('author')).order_by('-count')[:5]
+        genre_stats = (
+            all_books.values("genre").annotate(count=Count("genre")).order_by("-count")
+        )
 
-        monthly_data = read_books.filter(
-            endDate__year=current_year
-        ).annotate(
-            month_num=ExtractMonth('endDate')
-        ).values('month_num').annotate(count=Count('id')).order_by('month_num')
-        
+        author_stats = (
+            all_books.values("author")
+            .annotate(count=Count("author"))
+            .order_by("-count")[:5]
+        )
+
+        monthly_data = (
+            read_books.filter(endDate__year=current_year)
+            .annotate(month_num=ExtractMonth("endDate"))
+            .values("month_num")
+            .annotate(count=Count("id"))
+            .order_by("month_num")
+        )
+
         month_map = {
-            1: "Січень", 2: "Лютий", 3: "Березень", 4: "Квітень", 
-            5: "Травень", 6: "Червень", 7: "Липень", 8: "Серпень", 
-            9: "Вересень", 10: "Жовтень", 11: "Листопад", 12: "Грудень"
+            1: "Січень",
+            2: "Лютий",
+            3: "Березень",
+            4: "Квітень",
+            5: "Травень",
+            6: "Червень",
+            7: "Липень",
+            8: "Серпень",
+            9: "Вересень",
+            10: "Жовтень",
+            11: "Листопад",
+            12: "Грудень",
         }
         monthly_stats = [
-            {'month': month_map.get(item['month_num']), 'count': item['count']}
+            {"month": month_map.get(item["month_num"]), "count": item["count"]}
             for item in monthly_data
         ]
-        
-        last_activity = all_books.order_by('-addedDate')[:5].values('id', 'title', 'author', 'status', 'addedDate')
 
-        books_with_sessions_count = all_books.annotate(
-            total_session_duration=Sum('reading_sessions__duration')
-        ).filter(total_session_duration__isnull=False).count()
-        
-        avg_time_per_book = time_stats['total_duration_minutes'] / books_with_sessions_count if books_with_sessions_count > 0 else 0
+        last_activity = all_books.order_by("-addedDate")[:5].values(
+            "id", "title", "author", "status", "addedDate"
+        )
+
+        books_with_sessions_count = (
+            all_books.annotate(total_session_duration=Sum("reading_sessions__duration"))
+            .filter(total_session_duration__isnull=False)
+            .count()
+        )
+
+        avg_time_per_book = (
+            time_stats["total_duration_minutes"] / books_with_sessions_count
+            if books_with_sessions_count > 0
+            else 0
+        )
 
         logger.debug(f"Stats successfully calculated for user {user.id}")
 
-        return Response({
-            'yearlyGoal': user.yearly_goal,
-            'booksReadThisYear': read_this_year_count,
-            'progressToGoal': min(100, int((read_this_year_count / user.yearly_goal) * 100)) if user.yearly_goal > 0 else 0,
-            
-            # Загальна статистика
-            'totalBooks': all_books.count(),
-            'readCount': read_books.count(),
-            'averageRating': round(page_stats['avg_rating'], 1),
-            'genresCount': len(genre_stats),
-            'totalPagesRead': page_stats['total_pages_read'],
-            'averagePagesPerBook': round(page_stats['avg_pages_per_book'], 0),
-            'reading': all_books.filter(status='reading').count(),
-            'want': all_books.filter(status='want-to-read').count(),
-            'fav': all_books.filter(isFavorite=True).count(),
-            # Статистика часу
-            'totalReadingTime': time_stats['total_duration_minutes'], 
-            'totalReadingSessions': time_stats['total_sessions'],
-            'averageSessionDuration': round(time_stats['avg_duration_session'], 0),
-            'averageTimePerBook': round(avg_time_per_book, 0), 
-            
-            # Дані для графіків
-            'genreStats': list(genre_stats),
-            'monthlyStats': monthly_stats,
-            'authorStats': list(author_stats),
-            'lastActivity': list(last_activity),
-        })
-@api_view(['GET'])
+        return Response(
+            {
+                "yearlyGoal": user.yearly_goal,
+                "booksReadThisYear": read_this_year_count,
+                "progressToGoal": (
+                    min(100, int((read_this_year_count / user.yearly_goal) * 100))
+                    if user.yearly_goal > 0
+                    else 0
+                ),
+                # Загальна статистика
+                "totalBooks": all_books.count(),
+                "readCount": read_books.count(),
+                "averageRating": round(page_stats["avg_rating"], 1),
+                "genresCount": len(genre_stats),
+                "totalPagesRead": page_stats["total_pages_read"],
+                "averagePagesPerBook": round(page_stats["avg_pages_per_book"], 0),
+                "reading": all_books.filter(status="reading").count(),
+                "want": all_books.filter(status="want-to-read").count(),
+                "fav": all_books.filter(isFavorite=True).count(),
+                # Статистика часу
+                "totalReadingTime": time_stats["total_duration_minutes"],
+                "totalReadingSessions": time_stats["total_sessions"],
+                "averageSessionDuration": round(time_stats["avg_duration_session"], 0),
+                "averageTimePerBook": round(avg_time_per_book, 0),
+                # Дані для графіків
+                "genreStats": list(genre_stats),
+                "monthlyStats": monthly_stats,
+                "authorStats": list(author_stats),
+                "lastActivity": list(last_activity),
+            }
+        )
+
+
+@api_view(["GET"])
 def get_stats(request):
     """Повертає загальну кількість книг за категоріями для поточного користувача."""
     user_books = Book.objects.filter(user=request.user)
     data = {
-        'all': user_books.count(),
-        'reading': user_books.filter(status='reading').count(),
-        'read': user_books.filter(status='read').count(),
-        'want': user_books.filter(status='want-to-read').count(),
-        'fav': user_books.filter(isFavorite=True).count(),
+        "all": user_books.count(),
+        "reading": user_books.filter(status="reading").count(),
+        "read": user_books.filter(status="read").count(),
+        "want": user_books.filter(status="want-to-read").count(),
+        "fav": user_books.filter(isFavorite=True).count(),
     }
     return Response(data)
 
-# --- 7. Зовнішній пошук (ExternalSearchAPIView) ---
+
 class ExternalSearchAPIView(APIView):
-    """Проксі-сервер для взаємодії з Google Books API.
-    
-    Забезпечує безпечний пошук книг за запитом користувача, приховуючи 
-    API-ключ на сервері та форматуючи результати для фронтенду.
+    """
+    Проксі-шлюз для інтеграції з Google Books API.
+
+    Це представлення забезпечує безпечний місток між клієнтською частиною (React)
+    та зовнішнім API. Основні завдання класу:
+    1. **Безпека**: приховування приватного API-ключа на стороні сервера.
+    2. **Нормалізація**: перетворення складного та надлишкового об'єкта Google Books
+       у спрощений формат, що відповідає моделі `Book` застосунку.
+    3. **Очищення**: видалення потенційно небезпечних HTML-тегів із зовнішніх анотацій.
     """
 
     permission_classes = [IsAuthenticated]
-    
-    # Видаляє HTML теги з опису
+
     def _clean_html(self, raw_html):
-        """Видаляє HTML-теги з переданого тексту.
+        """Видаляє HTML-теги з переданого тексту за допомогою регулярних виразів.
 
         Args:
             raw_html (str): Текст, що містить HTML-теги.
@@ -352,47 +449,52 @@ class ExternalSearchAPIView(APIView):
             str: Очищений текст.
 
         """
-        cleanr = re.compile('<.*?>')
-        return re.sub(cleanr, '', raw_html)
+        cleanr = re.compile("<.*?>")
+        return re.sub(cleanr, "", raw_html)
 
-    # Конвертація результатів Google Books API у формат фронтенду
     def _format_google_book(self, item):
-        """Конвертує структуру даних від Google Books API у формат, сумісний з фронтендом.
+        """
+        Конвертує структуру Google Volume у внутрішній формат системи.
+
+        Виконує мапінг полів, обробляє відсутність даних (fallback values)
+        та витягує зображення обкладинки найвищої доступної якості.
 
         Args:
-            item (dict): Словник з даними книги від Google API.
+            item (dict): Елемент масиву `items` із відповіді Google Books API.
 
         Returns:
-            dict: Відформатований словник з необхідними полями.
-
+            dict: Словник з ключами `id`, `title`, `author`, `genre`, `cover` тощо.
         """
-        volume_info = item.get('volumeInfo', {})
-        
-        title = volume_info.get('title', 'Невідома назва')
-        authors = volume_info.get('authors', ['Невідомий автор'])
-        description = self._clean_html(volume_info.get('description', 'Опис відсутній.'))
-        
-        # Обкладинка: використовуємо Large, якщо доступно, інакше Thumbnail
-        image_links = volume_info.get('imageLinks', {})
-        cover = image_links.get('large') or image_links.get('thumbnail') or None
-        
-        genre = volume_info.get('categories', ['Загальне'])[0]
-        
-        language = volume_info.get('language', 'unknown')
+        volume_info = item.get("volumeInfo", {})
 
-        # Рік: витягуємо перші 4 цифри
-        published_date = volume_info.get('publishedDate', '0000')
-        year_str = published_date.split('-')[0]
+        # Обробка метаданих
+        title = volume_info.get("title", "Невідома назва")
+        authors = volume_info.get("authors", ["Невідомий автор"])
+        description = self._clean_html(
+            volume_info.get("description", "Опис відсутній.")
+        )
+
+        # Вибір найкращого доступного зображення. Використовується Large, якщо доступно, інакше Thumbnail
+        image_links = volume_info.get("imageLinks", {})
+        cover = image_links.get("large") or image_links.get("thumbnail") or None
+
+        genre = volume_info.get("categories", ["Загальне"])[0]
+
+        language = volume_info.get("language", "unknown")
+
+        # Парсинг року видання
+        published_date = volume_info.get("publishedDate", "0000")
+        year_str = published_date.split("-")[0]
         year = int(year_str) if year_str and year_str.isdigit() else 0
-        
-        pages = volume_info.get('pageCount', 0)
-        
-        #Рейтинг та кількість голосів
-        external_rating = volume_info.get('averageRating')
-        ratings_count = volume_info.get('ratingsCount')
+
+        pages = volume_info.get("pageCount", 0)
+
+        # Рейтинг та кількість голосів
+        external_rating = volume_info.get("averageRating")
+        ratings_count = volume_info.get("ratingsCount")
 
         return {
-            "id": item['id'], # Використовуємо Google ID як зовнішній ID
+            "id": item["id"],  # Використовується Google ID як зовнішній ID
             "title": title,
             "author": ", ".join(authors),
             "genre": genre,
@@ -401,22 +503,23 @@ class ExternalSearchAPIView(APIView):
             "pages": pages,
             "description": description,
             "cover": cover,
-            "externalRating": external_rating, 
+            "externalRating": external_rating,
             "ratingsCount": ratings_count,
-            "isCustom": False,  # Оскільки це результат з Google API
-            "isFavorite": False
+            "isCustom": False,
+            "isFavorite": False,
         }
 
     def get(self, request, *args, **kwargs):
         """Обробляє GET-запит для пошуку книг.
-        
-        Формує запит до Google Books API на основі переданих параметрів, 
+
+        Формує запит до Google Books API на основі переданих параметрів,
         отримує результати, форматує їх та повертає на клієнт.
 
         Args:
             request (Request): Об'єкт запиту DRF. Очікує query-параметри:
                 - q (str): Рядок пошуку.
                 - filter (str, optional): Критерій пошуку ('title', 'author', 'genre', 'all').
+                - `startIndex`: зміщення для пагінації.
 
         Returns:
             Response: Відповідь зі статусом 200 та списком відформатованих книг
@@ -427,53 +530,58 @@ class ExternalSearchAPIView(APIView):
             logger.critical("Google Books API Key is missing in settings.py")
             return Response(
                 {"error": "Ключ Google Books API не налаштований у settings.py."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-            
-        query = request.query_params.get('q', '')
-        search_filter = request.query_params.get('filter', 'all')
-        start_index = request.query_params.get('startIndex', 0)
+
+        query = request.query_params.get("q", "")
+        search_filter = request.query_params.get("filter", "all")
+        start_index = request.query_params.get("startIndex", 0)
 
         if not query:
             return Response({"results": []})
-        
-        logger.info(f"Searching for '{query}' via Google Books API (Filter: {search_filter})")
 
+        logger.info(
+            f"Searching for '{query}' via Google Books API (Filter: {search_filter})"
+        )
+
+        # Мапінг фільтрів фронтенду на префікси Google Query
         filter_map = {
-            'title': 'intitle',
-            'author': 'inauthor',
-            'genre': 'subject',
-            'all': ''
+            "title": "intitle",
+            "author": "inauthor",
+            "genre": "subject",
+            "all": "",
         }
-        
-        google_query_prefix = filter_map.get(search_filter, '')
-        
+
+        google_query_prefix = filter_map.get(search_filter, "")
+
         if google_query_prefix:
             full_query = f"{google_query_prefix}:{query}"
         else:
             full_query = query
-        
+
         # Параметри для запиту до Google Books API
         params = {
-            'q': full_query,
-            'maxResults': 20, 
-            'startIndex': start_index,
-            'key': settings.GOOGLE_BOOKS_API_KEY,
-            'langRestrict': 'uk|en'
+            "q": full_query,
+            "maxResults": 20,
+            "startIndex": start_index,
+            "key": settings.GOOGLE_BOOKS_API_KEY,
+            "langRestrict": "uk|en",
         }
-        
+
         GOOGLE_API_URL = "https://www.googleapis.com/books/v1/volumes"
-        
+
         try:
             response = requests.get(GOOGLE_API_URL, params=params, timeout=5)
-            response.raise_for_status() 
+            response.raise_for_status()
             data = response.json()
-            
-            count = len(data.get('items', []))
+
+            count = len(data.get("items", []))
             logger.info(f"Google API returned {count} results for query '{query}'")
 
-            if 'items' in data:
-                formatted_results = [self._format_google_book(item) for item in data['items']]
+            if "items" in data:
+                formatted_results = [
+                    self._format_google_book(item) for item in data["items"]
+                ]
                 return Response({"results": formatted_results})
             else:
                 return Response({"results": []})
@@ -482,33 +590,59 @@ class ExternalSearchAPIView(APIView):
             logger.error(f"Google Books API Request failed: {str(e)}", exc_info=True)
             return Response(
                 {"error": "Не вдалося підключитися до зовнішнього API пошуку."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )        
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-#---Відгуки та пропозиції щодо покращення---
+
 class FeedbackAPIView(APIView):
+    """
+    Обробник системи зворотного зв'язку.
+
+    Забезпечує пряму комунікацію користувачів з адміністрацією через
+    відправку електронних листів (SMTP) безпосередньо з інтерфейсу додатку.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        message_body = request.data.get('message')
+        """
+        Надсилає відгук користувача на офіційну пошту сервісу.
+
+        Валідує наявність повідомлення, ідентифікує відправника та
+        формує тіло листа з технічною інформацією.
+
+        Args:
+            request (Request): Запит, що містить `message` у тілі JSON.
+
+        Returns:
+            Response: Статус успішної відправки (200 OK)
+                або помилка доставки пошти (503).
+        """
+        message_body = request.data.get("message")
         if not message_body:
-            return Response({"error": "Повідомлення не може бути порожнім"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Повідомлення не може бути порожнім"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user_email = request.user.email
         subject = f"Новий відгук від {user_email} (Tracker Books)"
-        
-        # Формуємо текст листа
+
+        # Формування тексту листа
         full_message = f"Користувач: {user_email}\n\nПовідомлення:\n{message_body}"
 
         try:
             send_mail(
                 subject,
                 full_message,
-                settings.DEFAULT_FROM_EMAIL, # Відправник 
-                [settings.EMAIL_HOST_USER],  # Отримувач 
+                settings.DEFAULT_FROM_EMAIL,  # Відправник
+                [settings.EMAIL_HOST_USER],  # Отримувач
                 fail_silently=False,
             )
             return Response({"status": "success", "message": "Відгук надіслано!"})
         except Exception as e:
             logger.error(f"Помилка відправки відгуку: {str(e)}")
-            return Response({"error": "Не вдалося надіслати лист"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response(
+                {"error": "Не вдалося надіслати лист"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )

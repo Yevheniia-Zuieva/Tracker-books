@@ -1,9 +1,11 @@
 """Модуль глобальної обробки винятків та помилок.
 
-Цей модуль містить Middleware для перехоплення непередбачуваних 
-помилок на рівні всього застосунку. Забезпечує їх логування 
-з унікальними ідентифікаторами та повернення клієнту стандартизованої
-JSON-відповіді замість стандартних HTML-сторінок помилок Django.
+Цей модуль реалізує механізм Middleware, який інтегрується в цикл запит-відповідь 
+Django. Він забезпечує дві ключові функції:
+1. **Application Performance Monitoring (APM)**: вимірювання часу виконання запитів 
+   та виявлення повільних ендпоінтів.
+2. **Централізована обробка помилок**: перехоплення непередбачуваних винятків, 
+   їх логування з унікальними ID та повернення дружніх до фронтенду JSON-відповідей.
 """
 
 import logging
@@ -14,6 +16,7 @@ import uuid
 from django.conf import settings
 from django.http import JsonResponse
 
+# Ініціалізація системного логера застосунку
 logger = logging.getLogger('tracker')
 
 class ExceptionLoggingMiddleware:
@@ -28,45 +31,47 @@ class ExceptionLoggingMiddleware:
     """
 
     def __init__(self, get_response):
-        """Ініціалізація middleware.
+        """Ініціалізація екземпляру middleware.
 
         Args:
-            get_response (callable): Наступний middleware або view у ланцюжку 
-                                     обробки запитів Django.
+            get_response (callable): Функція, що представляє наступний крок у ланцюжку Django.
         """
         self.get_response = get_response
 
     def __call__(self, request):
-        """Обробка вхідного HTTP-запиту.
+        """
+        Обробляє вхідний запит та проводить аудит продуктивності.
 
-        Пропускає запит далі по ланцюжку. Якщо виникає помилка 
-        на етапі виконання view, Django автоматично викличе `process_exception`.
+        Метод заміряє час виконання запиту. Якщо тривалість перевищує 
+        встановлений поріг (500 мс), запис у логах позначається як WARNING 
+        для подальшої оптимізації розробниками.
 
         Args:
-            request (HttpRequest): Об'єкт поточного HTTP-запиту.
+            request (HttpRequest): Об'єкт вхідного HTTP-запиту.
 
         Returns:
-            HttpResponse: Відповідь від наступних шарів застосунку.
+            HttpResponse: Об'єкт відповіді, отриманий від наступних шарів системи.
         """
-        # --- APM: Початок заміру продуктивності ---
+        # Фіксація часу старту для APM
         start_time = time.time()
 
-        # Логування запиту (Request)
+        # Логування вхідного запиту для аудиту безпеки
         logger.info(f"Request: {request.method} {request.get_full_path()} from {request.META.get('REMOTE_ADDR')}")
         
         response = self.get_response(request)
 
-        # --- APM: Завершення заміру продуктивності ---
-        duration = (time.time() - start_time) * 1000  # Переводимо в мілісекунди
+        # Розрахунок тривалості обробки в мілісекундах
+        duration = (time.time() - start_time) * 1000  
         
-        # Визначаємо рівень важливості залежно від швидкості
+        # Формування метрики продуктивності
         log_message = (
             f"Performance Metrics | Path: {request.path} | "
             f"Method: {request.method} | Duration: {duration:.2f}ms | "
             f"Status: {response.status_code} | User ID: {request.user.id if request.user.is_authenticated else 'Anon'}"
         )
 
-        if duration > 500: # Поріг для "повільних" запитів
+        # Перевірка порогу продуктивності
+        if duration > 500: 
             logger.warning(f"SLOW_ENDPOINT detected: {log_message}")
         else:
             logger.info(log_message)
@@ -77,22 +82,24 @@ class ExceptionLoggingMiddleware:
         """Обробник непередбачуваних винятків.
 
         Викликається Django автоматично, якщо у view виникла помилка, 
-        яка не була оброблена блоком try-except.
+        яка не була оброблена блоком try-except. Метод автоматично генерує інцидент-код (UUID), збирає повний контекст 
+        (URL, параметри, ID користувача) та формує локалізовану відповідь. 
+        Це запобігає «падінню» фронтенду через некоректний формат HTML-помилок.
 
         Args:
             request (HttpRequest): Запит, під час обробки якого сталася помилка.
-            exception (Exception): Об'єкт винятку, що був згенерований.
+            exception (Exception): Об'єкт винятку, що був згенерований з деталями помилки.
 
         Returns:
-            JsonResponse: Сформована відповідь зі статусом 500. Містить 
-                          деталі помилки у режимі DEBUG, або безпечне 
-                          повідомлення у режимі Production.
+            JsonResponse: Сформована JSON-відповідь зі статусом 500. 
+            Містить ключі: `error_id`, `message`, `suggested_actions`.
+            У режимі DEBUG додаються `details` та `traceback`.
         """
-        # 1. Створюємо унікальний ідентифікатор помилки (Error ID)
-        # Використовуємо перші 8 символів UUID для зручності пошуку в логах
+        # Генерація унікального токена інциденту
+        # Використання перших 8-ми символів UUID для зручності пошуку в логах
         error_id = str(uuid.uuid4())[:8] 
         
-        # 2. Збираємо контекстну інформацію про стан системи на момент збою
+        # Збираємо контекстну інформацію про стан системи на момент збою
         user_id = request.user.id if request.user.is_authenticated else "Anonymous"
         
         context = {
@@ -105,15 +112,13 @@ class ExceptionLoggingMiddleware:
             "query_params": dict(request.GET),
         }
 
-        # 3. Логуємо критичну помилку з повним контекстом
-        # exc_info=True гарантує, що в лог буде записано повний Traceback (стек викликів)
+        # Логування з повним стеком викликів для налагодження
         logger.error(
             f"Unhandled Exception [{error_id}]: {str(exception)} | Context: {context}",
             exc_info=True  
         )
 
-        # Ручна локалізація
-        # Отримуємо мову (встановлюється LocaleMiddleware)
+        # Визначення мови інтерфейсу для локалізації повідомлення
         lang = getattr(request, 'LANGUAGE_CODE', 'uk')[:2]
 
         translations = {
@@ -139,10 +144,10 @@ class ExceptionLoggingMiddleware:
             }
         }
 
-        # Вибираємо переклад (якщо мова не uk/en, беремо uk)
+        # Вибир перекладу (якщо мова не uk/en, беремо uk)
         t = translations.get(lang, translations['uk'])
 
-        # 4. Формуємо відповідь для користувача
+        # Формування відповіді для користувача
         error_message = {
             "status": "error",
             "error_id": error_id,
@@ -150,15 +155,15 @@ class ExceptionLoggingMiddleware:
             "message": t['msg'],
             "suggested_actions": t['actions'],
             "support_info": {
-                "contact_email": "support@trackerbooks.com",
+                "contact_email": "y.zuyeva@student.sumdu.edu.ua",
                 "instruction": f"{t['support']}{error_id}"
             }
         }
 
-        # 5. Розширення контексту для розробника (якщо DEBUG = True)
+        # Додавання розширених даних для розробника у середовищі розробки (якщо DEBUG = True)
         if settings.DEBUG:
             error_message["details"] = str(exception)
             error_message["traceback"] = traceback.format_exc()
 
-        # Повертаємо стандартизовану JSON-відповідь із HTTP статусом 500
+        # Повернення стандартизованої JSON-відповіді із HTTP статусом 500
         return JsonResponse(error_message, status=500)
