@@ -1,3 +1,10 @@
+/**
+ * @file Сторінка запиту на відновлення пароля (RequestResetPage).
+ * @description Компонент надає інтерфейс для введення електронної пошти користувача,
+ * на яку буде надіслано посилання для скидання пароля. Включає обробку станів завантаження,
+ * успішного виконання запиту та відображення помилок сервера.
+ */
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { apiAuth } from "../api/ApiService";
@@ -13,21 +20,42 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Mail, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 
+/**
+ * Компонент сторінки запиту на відновлення пароля.
+ * * @component
+ * @returns {React.JSX.Element} Рендерить форму введення email або повідомлення про успішну відправку.
+ */
 export function RequestResetPage() {
+  /** @type {[string, Function]} Стан для зберігання введеної електронної пошти */
   const [email, setEmail] = useState("");
+
+  /** @type {[boolean, Function]} Стан індикатора завантаження під час запиту до API */
   const [isLoading, setIsLoading] = useState(false);
+
+  /** @type {[boolean, Function]} Стан успішного завершення операції */
   const [isSuccess, setIsSuccess] = useState(false);
+
+  /** @type {[string|null, Function]} Стан для зберігання повідомлення про помилку від сервера */
   const [error, setError] = useState(null);
 
+  /**
+   * Обробник відправки форми.
+   * Викликає сервіс відновлення пароля та керує станами інтерфейсу.
+   * * @async
+   * @param {React.FormEvent} e - Подія відправки форми.
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
+    // Логування для діагностики в процесі розробки
     console.log("Спроба відправки пошти:", email);
     console.log("Чи існує функція?", apiAuth.resetPasswordRequest);
 
     try {
+      /** Виклик API для створення запиту на скидання пароля */
       await apiAuth.resetPasswordRequest(email);
       setIsSuccess(true);
     } catch {
@@ -37,6 +65,7 @@ export function RequestResetPage() {
     }
   };
 
+  /** Екран успішного результату після відправки листа */
   if (isSuccess) {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 font-sans">
@@ -59,6 +88,7 @@ export function RequestResetPage() {
     );
   }
 
+  /** Основний екран з формою запиту */
   return (
     <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 font-sans">
       <Card className="w-full max-w-md shadow-xl bg-white">

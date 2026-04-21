@@ -1,3 +1,10 @@
+/**
+ * @file Сторінка підтвердження скидання пароля (ResetPasswordConfirmPage).
+ * @description Фінальний етап відновлення доступу. Компонент отримує унікальні
+ * ідентифікатори (uid та token) з URL, проводить клієнтську валідацію нового
+ * пароля на відповідність вимогам безпеки та відправляє дані на сервер.
+ */
+
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiAuth } from "../api/ApiService";
@@ -13,24 +20,50 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 
+/**
+ * Компонент сторінки підтвердження нового пароля.
+ * * Реалізує вимоги безпеки проекту "Tracker Books":
+ * - Забезпечення безпечного доступу.
+ * - Клієнтська валідація складності пароля.
+ * * @component
+ * @returns {React.JSX.Element} Форма встановлення нового пароля.
+ */
 export function ResetPasswordConfirmPage() {
-  const { uid, token } = useParams(); // Отримуємо параметри з URL
+  /** @type {{uid: string, token: string}} Параметри безпеки, витягнуті з URL-адреси */
+  const { uid, token } = useParams();
   const navigate = useNavigate();
 
+  /** @type {[Object, Function]} Стан полів форми введення паролів */
   const [formData, setFormData] = useState({
     new_password: "",
     re_new_password: "",
   });
+
+  /** @type {[boolean, Function]} Стан індикатора завантаження під час запиту */
   const [isLoading, setIsLoading] = useState(false);
+
+  /** @type {[string|null, Function]} Стан для відображення помилок валідації або сервера */
   const [error, setError] = useState(null);
 
+  /**
+   * Перевірка пароля на відповідність політиці безпеки.
+   * Вимагає: мінімум 8 символів, цифру, велику та малу літери, спецсимвол.
+   * @param {string} password - Пароль для перевірки.
+   * @returns {boolean} Результат валідації.
+   */
   const validatePassword = (password) => {
-    // Регулярний вираз для вимоги пароля
     const regex =
       /^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
     return regex.test(password);
   };
 
+  /**
+   * Обробник сабміту форми.
+   * Проводить перевірку співпадіння паролів та їх складності перед відправкою.
+   * У разі успіху перенаправляє на головну з повідомленням.
+   * @async
+   * @param {React.FormEvent} e - Подія відправки форми.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -52,7 +85,7 @@ export function ResetPasswordConfirmPage() {
     setIsLoading(true);
 
     try {
-      // Відправка на сервер
+      /** Виклик API для остаточного скидання пароля на бекенді */
       await apiAuth.resetPasswordConfirm(
         uid,
         token,
@@ -60,10 +93,12 @@ export function ResetPasswordConfirmPage() {
         formData.re_new_password,
       );
 
+      // Перехід до логіну з успішним статусом у state
       navigate("/", {
         state: { message: "Пароль успішно змінено! Увійдіть з новим паролем." },
       });
     } catch (err) {
+      // Спеціальна обробка для недійсних посилань (прострочений токен)
       if (
         err.response &&
         (err.response.status === 400 || err.response.status === 403)

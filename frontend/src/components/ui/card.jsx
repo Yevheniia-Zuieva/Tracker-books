@@ -2,6 +2,17 @@ import * as React from "react";
 
 import { cn } from "./utils";
 
+/**
+ * Основний контейнерний компонент картки.
+ * Використовується як базовий блок для відображення книг, статистичних даних
+ * та елементів аналітики у застосунку "Tracker Books".
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи для зовнішнього вигляду.
+ * @param {React.ReactNode} props.children - Вміст картки.
+ * @param {React.HTMLAttributes<HTMLDivElement>} props.props - Стандартні HTML-атрибути div.
+ * @returns {React.JSX.Element} Елемент div з базовою стилізацією картки.
+ */
 function Card({ className, ...props }) {
   return (
     <div
@@ -15,6 +26,14 @@ function Card({ className, ...props }) {
   );
 }
 
+/**
+ * Верхня частина картки (хедер).
+ * Призначена для розміщення заголовка, опису та кнопок швидких дій.
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи.
+ * @returns {React.JSX.Element}
+ */
 function CardHeader({ className, ...props }) {
   return (
     <div
@@ -28,6 +47,14 @@ function CardHeader({ className, ...props }) {
   );
 }
 
+/**
+ * Заголовок картки.
+ * Використовується для відображення назви книги або назви розділу статистики.
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи.
+ * @returns {React.JSX.Element} Елемент h4.
+ */
 function CardTitle({ className, ...props }) {
   return (
     <h4
@@ -38,6 +65,13 @@ function CardTitle({ className, ...props }) {
   );
 }
 
+/**
+ * Короткий опис або допоміжний текст під заголовком.
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи.
+ * @returns {React.JSX.Element} Елемент p.
+ */
 function CardDescription({ className, ...props }) {
   return (
     <p
@@ -48,6 +82,14 @@ function CardDescription({ className, ...props }) {
   );
 }
 
+/**
+ * Контейнер для додаткових дій у хедері картки.
+ * Наприклад, кнопки "Редагувати" або іконки "Видалити".
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи.
+ * @returns {React.JSX.Element}
+ */
 function CardAction({ className, ...props }) {
   return (
     <div
@@ -61,6 +103,14 @@ function CardAction({ className, ...props }) {
   );
 }
 
+/**
+ * Основна область вмісту картки.
+ * Призначена для відображення списків, тексту нотаток або графіків статистики.
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи.
+ * @returns {React.JSX.Element}
+ */
 function CardContent({ className, ...props }) {
   return (
     <div
@@ -71,6 +121,14 @@ function CardContent({ className, ...props }) {
   );
 }
 
+/**
+ * Нижня частина картки (футер).
+ * Використовується для додаткової інформації або кнопок завершення сесії читання.
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи.
+ * @returns {React.JSX.Element}
+ */
 function CardFooter({ className, ...props }) {
   return (
     <div

@@ -1,4 +1,17 @@
-import { BookOpen, Code, Database, Globe, Layers, CheckCircle2 } from "lucide-react";
+/**
+ * @file Сторінка "Про проєкт" застосунку Tracker Books.
+ * @description Презентаційний компонент, що описує архітектуру системи,
+ * використаний технологічний стек (Full-stack) та перелік
+ * функціональних можливостей.
+ */
+import {
+  BookOpen,
+  Code,
+  Database,
+  Globe,
+  Layers,
+  CheckCircle2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 /**
@@ -6,30 +19,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
  * Описує мету застосунку, використані технології та ключові можливості.
  */
 export default function AboutPage() {
+  /** * Конфігурація технологічного стека.
+   * Розподілена за категоріями для наочності архітектури.
+   * @type {Array<{category: string, icon: React.ReactNode, items: string[]}>}
+   */
   const techStack = [
     {
       category: "Frontend",
       icon: <Code className="h-5 w-5 text-blue-500" />,
-      items: ["React 19", "React Router 7", "Tailwind CSS", "Lucide Icons", "Axios"]
+      items: [
+        "React 19",
+        "React Router 7",
+        "Tailwind CSS",
+        "Lucide Icons",
+        "Axios",
+      ],
     },
     {
       category: "Backend",
       icon: <Database className="h-5 w-5 text-green-500" />,
-      items: ["Django 5", "Django REST Framework", "JWT Auth (Djoser)", "SQLite"]
+      items: [
+        "Django 5",
+        "Django REST Framework",
+        "JWT Auth (Djoser)",
+        "SQLite",
+      ],
     },
     {
       category: "Інтеграції",
       icon: <Globe className="h-5 w-5 text-purple-500" />,
-      items: ["Google Books API", "RESTful API Architecture"]
-    }
+      items: ["Google Books API", "RESTful API Architecture"],
+    },
   ];
 
+  /** * Перелік ключових функцій застосунку.
+   * Напряму корелює з функціональними вимогами.
+   * @type {string[]}
+   */
   const features = [
     "Пошук книг у реальному часі через Google API",
     "Керування особистою бібліотекою та статусами читання",
     "Відстеження прогресу сторінок",
     "Система нотаток та цитат до кожної книги",
-    "Детальна статистика читання та річні цілі"
+    "Детальна статистика читання та річні цілі",
   ];
 
   return (
@@ -43,7 +75,8 @@ export default function AboutPage() {
           Tracker Books
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Твій персональний помічник у світі книг, створений для тих, хто цінує кожен прочитаний рядок.
+          Твій персональний помічник у світі книг, створений для тих, хто цінує
+          кожен прочитаний рядок.
         </p>
       </section>
 
@@ -55,12 +88,14 @@ export default function AboutPage() {
             Мета проєкту
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            Tracker Books — вебзастосунок, розроблений для зручного обліку власної бібліотеки. 
-            Він поєднує в собі потужність Django на бекенді та гнучкість React на фронтенді, 
-            забезпечуючи швидку роботу та приємний користувацький досвід.
+            Tracker Books — вебзастосунок, розроблений для зручного обліку
+            власної бібліотеки. Він поєднує в собі потужність Django на бекенді
+            та гнучкість React на фронтенді, забезпечуючи швидку роботу та
+            приємний користувацький досвід.
           </p>
         </div>
-        
+
+        {/* Список можливостей */}
         <div className="bg-muted/50 rounded-2xl p-6 border border-border shadow-sm">
           <h3 className="font-semibold mb-4">Ключові можливості:</h3>
           <ul className="space-y-3">
@@ -87,7 +122,10 @@ export default function AboutPage() {
               <CardContent>
                 <ul className="space-y-2">
                   {tech.items.map((item, i) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
+                    <li
+                      key={i}
+                      className="text-sm text-muted-foreground flex items-center gap-2"
+                    >
                       <div className="h-1 w-1 rounded-full bg-primary" />
                       {item}
                     </li>

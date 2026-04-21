@@ -1,7 +1,20 @@
+/**
+ * @file Сторінка підтримки та допомоги користувачам застосунку "Tracker Books".
+ * @description Компонент містить базу знань (FAQ), короткі інструкції щодо ключового
+ * функціоналу (пошук, бібліотека, статистика) та інтерактивну форму для відправки
+ * відгуків або повідомлень про помилки до адміністрації.
+ */
 import { useState } from "react";
-import { 
-  HelpCircle, BookPlus, Search, BarChart3, 
-  MessageCircle, Info, Send, X, Loader2 
+import {
+  HelpCircle,
+  BookPlus,
+  Search,
+  BarChart3,
+  MessageCircle,
+  Info,
+  Send,
+  X,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -9,32 +22,56 @@ import { Textarea } from "./ui/textarea";
 import { apiFeedback } from "../api/ApiService";
 
 /**
- * Сторінка "Допомога".
- * Містить інструкції для користувачів та інтерактивну форму зворотного зв'язку.
+ * Компонент HelpPage.
+ * * Функціональні аспекти:
+ * - Навігація по часим запитанням (FAQ).
+ * - Ознайомлення з основними модулями системи.
+ * - Відправка зворотного зв'язку через API.
+ * * @component
+ * @returns {React.JSX.Element} Сторінка допомоги з формою зворотного зв'язку.
  */
 export default function HelpPage() {
+  /** @type {[boolean, Function]} Стан видимості форми відгуку */
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  /** @type {[string, Function]} Текст повідомлення від користувача */
   const [message, setMessage] = useState("");
+
+  /** @type {[boolean, Function]} Стан процесу відправки даних на сервер */
   const [isSending, setIsSending] = useState(false);
 
+  /**
+   * Масив об'єктів Частих Запитань.
+   * Охоплює базові сценарії взаємодії з трекером.
+   * @type {Array<{question: string, answer: string}>}
+   */
   const faqs = [
     {
       question: "Як додати нову книгу?",
-      answer: "Ви можете скористатися пошуком через Google Books на сторінці 'Пошук книг' або додати дані вручну, натиснувши кнопку 'Додати книгу вручну'."
+      answer:
+        "Ви можете скористатися пошуком через Google Books на сторінці 'Пошук книг' або додати дані вручну, натиснувши кнопку 'Додати книгу вручну'.",
     },
     {
       question: "Як відстежувати прогрес читання?",
-      answer: "На картці книги в бібліотеці натисніть кнопку статусу. Після того, як статус зміниться на 'Читаю', ви зможете оновлювати кількість прочитаних сторінок."
+      answer:
+        "На картці книги в бібліотеці натисніть кнопку статусу. Після того, як статус зміниться на 'Читаю', ви зможете оновлювати кількість прочитаних сторінок.",
     },
     {
       question: "Чи можна видалити книгу з бібліотеки?",
-      answer: "Так, у детальному перегляді кожної книги або безпосередньо на картці (для книг, доданих вручну) є можливість видалення запису."
-    }
+      answer:
+        "Так, у детальному перегляді кожної книги або безпосередньо на картці (для книг, доданих вручну) є можливість видалення запису.",
+    },
   ];
 
+  /**
+   * Обробник відправки повідомлення розробнику.
+   * Використовує сервіс apiFeedback для взаємодії з бекендом.
+   * @async
+   * @function handleSendFeedback
+   */
   const handleSendFeedback = async () => {
     if (!message.trim()) return;
-    
+
     setIsSending(true);
     try {
       await apiFeedback.sendFeedback(message);
@@ -60,7 +97,8 @@ export default function HelpPage() {
           Допомога та підтримка
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Все що вам потрібно знати для комфортної роботи з вашою онлайн-бібліотекою.
+          Все що вам потрібно знати для комфортної роботи з вашою
+          онлайн-бібліотекою.
         </p>
       </section>
 
@@ -72,8 +110,9 @@ export default function HelpPage() {
             <CardTitle className="text-lg">Пошук</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Знаходьте мільйони книг за назвою, автором або жанром за допомогою інтеграції з Google API. 
-            Використовуйте фільтрування та сортування для швидкого пошуку ідеальної книги.
+            Знаходьте мільйони книг за назвою, автором або жанром за допомогою
+            інтеграції з Google API. Використовуйте фільтрування та сортування
+            для швидкого пошуку ідеальної книги.
           </CardContent>
         </Card>
 
@@ -83,7 +122,8 @@ export default function HelpPage() {
             <CardTitle className="text-lg">Бібліотека</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Організовуйте свої книги за статусами: "Хочу прочитати", "Читаю" або "Прочитано".
+            Організовуйте свої книги за статусами: "Хочу прочитати", "Читаю" або
+            "Прочитано".
           </CardContent>
         </Card>
 
@@ -93,7 +133,8 @@ export default function HelpPage() {
             <CardTitle className="text-lg">Статистика</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Аналізуйте свою активність та слідкуйте за виконанням річної мети читання.
+            Аналізуйте свою активність та слідкуйте за виконанням річної мети
+            читання.
           </CardContent>
         </Card>
       </section>
@@ -106,22 +147,30 @@ export default function HelpPage() {
         </h2>
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className="p-5 bg-muted/30 rounded-xl border border-border">
-              <h3 className="font-semibold text-foreground mb-2">{faq.question}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{faq.answer}</p>
+            <div
+              key={index}
+              className="p-5 bg-muted/30 rounded-xl border border-border"
+            >
+              <h3 className="font-semibold text-foreground mb-2">
+                {faq.question}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {faq.answer}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Контакти та форма */}
+      {/* Контакти та форма зворотного зв'язку*/}
       <section className="bg-primary/5 rounded-3xl p-8 border border-primary/10">
         {!isFormOpen ? (
           <div className="text-center space-y-4">
             <MessageCircle className="h-8 w-8 text-primary mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">Залишилися питання?</h2>
             <p className="text-muted-foreground mb-6">
-              Якщо ви знайшли помилку або маєте пропозиції щодо покращення, звертайтеся до розробника.
+              Якщо ви знайшли помилку або маєте пропозиції щодо покращення,
+              звертайтеся до розробника.
             </p>
             <Button onClick={() => setIsFormOpen(true)} className="px-8">
               Надіслати відгук
@@ -131,7 +180,11 @@ export default function HelpPage() {
           <div className="max-w-xl mx-auto space-y-4">
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl font-bold">Ваш відгук</h2>
-              <Button variant="ghost" size="icon" onClick={() => setIsFormOpen(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFormOpen(false)}
+              >
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -142,10 +195,17 @@ export default function HelpPage() {
               className="min-h-[120px] bg-background"
             />
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsFormOpen(false)} disabled={isSending}>
+              <Button
+                variant="outline"
+                onClick={() => setIsFormOpen(false)}
+                disabled={isSending}
+              >
                 Скасувати
               </Button>
-              <Button onClick={handleSendFeedback} disabled={isSending || !message.trim()}>
+              <Button
+                onClick={handleSendFeedback}
+                disabled={isSending || !message.trim()}
+              >
                 {isSending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (

@@ -1,6 +1,8 @@
 /**
- * @file Сторінка авторизації та реєстрації користувачів.
- * Містить форми для входу та створення нового акаунта з вбудованою валідацією.
+ * @file Сторінка авторизації та реєстрації користувачів застосунку "Tracker Books".
+ * @description Модуль забезпечує повний цикл керування доступом: від створення облікового запису
+ * до отримання JWT-токенів. Реалізує багаторівневу валідацію (клієнт + сервер) та
+ * обробку помилок безпеки.
  */
 
 import { useState } from "react";
@@ -27,7 +29,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-// Імпортуємо наш API сервіс
 import { apiAuth } from "../api/ApiService";
 
 /**
@@ -40,13 +41,16 @@ import { apiAuth } from "../api/ApiService";
  * @returns {JSX.Element} React-компонент сторінки авторизації.
  */
 export function AuthPage({ onAuth }) {
+  /** @type {[boolean, Function]} Стан видимості пароля */
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  /** @type {[Object, Function]} Стан форми входу */
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [loginError, setLoginError] = useState(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
+  /** @type {[Object, Function]} Стан форми реєстрації */
   const [registerData, setRegisterData] = useState({
     name: "",
     email: "",
@@ -75,10 +79,10 @@ export function AuthPage({ onAuth }) {
     setIsLoginLoading(true);
 
     try {
-      // Отримуємо токени
+      // Отримання токенів
       await apiAuth.login(loginData.email, loginData.password);
 
-      // Отримуємо профіль користувача
+      // Отримання профілю користувача
       const userProfile = await apiAuth.getProfile();
 
       const token = localStorage.getItem("access_token") || "";

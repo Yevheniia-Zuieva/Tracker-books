@@ -1,6 +1,19 @@
 import * as React from "react";
 import { cn } from "./utils";
 
+/**
+ * Компонент багаторядкового текстового поля (Textarea).
+ * * Забезпечує універсальний інтерфейс для введення тексту з підтримкою
+ * адаптивної стилізації та станів фокусування. Використовує `React.forwardRef`
+ * для забезпечення доступу до базового DOM-елемента.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи для кастомізації зовнішнього вигляду.
+ * @param {React.TextareaHTMLAttributes<HTMLTextAreaElement>} props.props - Стандартні атрибути HTML-елемента textarea.
+ * @param {React.ForwardedRef<HTMLTextAreaElement>} ref - Посилання на DOM-елемент textarea.
+ * @returns {React.JSX.Element} Рендерить стилізований елемент textarea.
+ */
 const Textarea = React.forwardRef(({ className, ...props }, ref) => {
   return (
     <textarea

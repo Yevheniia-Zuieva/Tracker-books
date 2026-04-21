@@ -2,6 +2,21 @@ import * as React from "react";
 
 import { cn } from "./utils";
 
+/**
+ * Універсальний компонент текстового поля (Input) для збору даних від користувача.
+ * * Використовується як базовий елемент інтерфейсу для реалізації наступних функцій:
+ * - Реєстрація користувача (введення імені, email, пароля).
+ * - Авторизація (введення облікових даних).
+ * - Пошук книг за назвою, автором або іншими критеріями.
+ * * Стилізація підтримує стани валідації (через атрибут `aria-invalid`), що важливо для
+ * відображення помилок некоректного формату пошти або пароля.
+ * * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} [props.className] - Додаткові CSS-класи для кастомізації зовнішнього вигляду.
+ * @param {string} [props.type] - Тип поля введення (text, email, password, number тощо).
+ * @param {React.InputHTMLAttributes<HTMLInputElement>} props.props - Інші стандартні атрибути HTML-елемента input.
+ * @returns {React.JSX.Element} Рендерить стилізований елемент input.
+ */
 function Input({ className, type, ...props }) {
   return (
     <input
