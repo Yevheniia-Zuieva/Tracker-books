@@ -19,7 +19,10 @@ import React, { useState } from "react";
  */
 
 const NotFound = () => {
-  /** @type {[boolean, Function]} Стан наведення курсора на кнопку повернення */
+  /**
+ * Стан наведення курсора на кнопку повернення
+ * @type {boolean}
+ */
   const [isHovered, setIsHovered] = useState(false);
 
   return (

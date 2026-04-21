@@ -13,7 +13,7 @@ import { cn } from "./utils";
  * * @component
  * @param {Object} props - Властивості компонента.
  * @param {string} [props.className] - Додаткові CSS-класи для корегування макета.
- * @param {React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>} props.props - Стандартні атрибути Radix UI Tabs Root.
+ * @param {Object} props.props - Стандартні атрибути Radix UI Tabs Root.
  * @returns {React.JSX.Element} Контейнер управління вкладками.
  */
 function Tabs({ className, ...props }) {
@@ -32,7 +32,7 @@ function Tabs({ className, ...props }) {
  * * @component
  * @param {Object} props - Властивості компонента.
  * @param {string} [props.className] - Додаткові CSS-класи.
- * @param {React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>} props.props - Атрибути списку вкладок.
+ * @param {Object} props.props - Атрибути списку вкладок.
  * @returns {React.JSX.Element} Рендерить стилізований список перемикачів.
  */
 function TabsList({ className, ...props }) {
@@ -56,7 +56,7 @@ function TabsList({ className, ...props }) {
  * @param {Object} props - Властивості компонента.
  * @param {string} [props.className] - Додаткові CSS-класи.
  * @param {string} props.value - Унікальне значення вкладки, що пов'язує тригер із контентом.
- * @param {React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>} props.props - Атрибути тригера вкладки.
+ * @param {Object} props.props - Атрибути тригера вкладки.
  * @returns {React.JSX.Element} Кнопка-перемикач.
  */
 function TabsTrigger({ className, ...props }) {
@@ -81,7 +81,7 @@ function TabsTrigger({ className, ...props }) {
  * @param {Object} props - Властивості компонента.
  * @param {string} [props.className] - Додаткові CSS-класи.
  * @param {string} props.value - Значення, що ідентифікує контент вкладки.
- * @param {React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>} props.props - Атрибути вмісту вкладки.
+ * @param {Object} props.props - Атрибути вмісту вкладки.
  * @returns {React.JSX.Element} Панель із контентом.
  */
 function TabsContent({ className, ...props }) {

@@ -31,15 +31,24 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
  * @returns {React.JSX.Element} Рендерить верхню панель застосунку.
  */
 export function Header({ user, onLogout }) {
-  /** @type {[boolean, Function]} Стан видимості випадаючого меню профілю */
+  /**
+ * Стан видимості випадаючого меню профілю
+ * @type {boolean}
+ */
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  /** @type {[boolean, Function]} Стан поточної теми (true для темної) */
+  /**
+ * Стан поточної теми (true для темної)
+ * @type {boolean}
+ */
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
 
-  /** @type {React.RefObject<HTMLDivElement>} Референс для відстеження кліків поза меню */
+  /**
+ * Референс для відстеження кліків поза меню
+ * @type {React.RefObject<HTMLDivElement>}
+ */
   const dropdownRef = useRef(null);
 
   // Хуки маршрутизації

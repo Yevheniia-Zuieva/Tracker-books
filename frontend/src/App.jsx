@@ -93,10 +93,16 @@ const MainAppLayout = ({ user, handleLogout }) => {
  * @returns {React.JSX.Element} Конфігурація маршрутизатора застосунку.
  */
 function App() {
-  /** @type {[Object|null, Function]} Стан авторизованого користувача */
+  /**
+ * Стан авторизованого користувача
+ * @type {Object|null}
+ */
   const [user, setUser] = useState(null);
 
-  /** @type {[boolean, Function]} Стан ініціалізації застосунку (перевірка сесії) */
+  /**
+ * Стан ініціалізації застосунку (перевірка сесії)
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(true);
 
   /**

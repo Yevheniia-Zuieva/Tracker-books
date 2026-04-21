@@ -41,16 +41,25 @@ import { apiAuth } from "../api/ApiService";
  * @returns {JSX.Element} React-компонент сторінки авторизації.
  */
 export function AuthPage({ onAuth }) {
-  /** @type {[boolean, Function]} Стан видимості пароля */
+  /**
+ * Стан видимості пароля
+ * @type {boolean}
+ */
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  /** @type {[Object, Function]} Стан форми входу */
+  /**
+ * Стан форми входу
+ * @type {Object}
+ */
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [loginError, setLoginError] = useState(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
-  /** @type {[Object, Function]} Стан форми реєстрації */
+  /**
+ * Стан форми реєстрації
+ * @type {Object}
+ */
   const [registerData, setRegisterData] = useState({
     name: "",
     email: "",

@@ -69,13 +69,22 @@ const FilterSection = ({ icon: Icon, title, items, current, onChange }) => (
  * @returns {React.JSX.Element} Інтерфейс пошуку з бічною панеллю фільтрів та сіткою результатів.
  */
 export default function SearchPage() {
-  /** @type {[string, Function]} Поточний текст пошукового запиту */
+  /**
+ * Поточний текст пошукового запиту
+ * @type {string}
+ */
   const [query, setQuery] = useState("");
 
-  /** @type {[string, Function]} Глобальний фільтр пошуку (all|title|author|genre) */
+  /**
+ * Глобальний фільтр пошуку (all|title|author|genre)
+ * @type {string}
+ */
   const [filter, setFilter] = useState("all");
 
-  /** @type {[Array, Function]} Масив результатів, отриманих від API */
+  /**
+ * Масив результатів, отриманих від API
+ * @type {Array}
+ */
   const [results, setResults] = useState([]);
 
   // СТАНИ ЗАВАНТАЖЕННЯ ТА МОДАЛЬНИХ ВІКОН
@@ -83,7 +92,10 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
-  /** @type {[number, Function]} Індекс для пагінації Google Books (startIndex) */
+  /**
+ * Індекс для пагінації Google Books (startIndex)
+ * @type {number}
+ */
   const [startIndex, setStartIndex] = useState(0);
 
   // СТАНИ КЛІЄНТСЬКОЇ ФІЛЬТРАЦІЇ ТА СОРТУВАННЯ

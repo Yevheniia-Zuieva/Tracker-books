@@ -29,20 +29,32 @@ import { Lock, Loader2, AlertTriangle } from "lucide-react";
  * @returns {React.JSX.Element} Форма встановлення нового пароля.
  */
 export function ResetPasswordConfirmPage() {
-  /** @type {{uid: string, token: string}} Параметри безпеки, витягнуті з URL-адреси */
+  /**
+   * Параметри безпеки, витягнуті з URL-адреси
+   * @type {Object}
+   */
   const { uid, token } = useParams();
   const navigate = useNavigate();
 
-  /** @type {[Object, Function]} Стан полів форми введення паролів */
+  /**
+ * Стан полів форми введення паролів
+ * @type {Object}
+ */
   const [formData, setFormData] = useState({
     new_password: "",
     re_new_password: "",
   });
 
-  /** @type {[boolean, Function]} Стан індикатора завантаження під час запиту */
+  /**
+ * Стан індикатора завантаження під час запиту
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(false);
 
-  /** @type {[string|null, Function]} Стан для відображення помилок валідації або сервера */
+  /**
+ * Стан для відображення помилок валідації або сервера
+ * @type {string|null}
+ */
   const [error, setError] = useState(null);
 
   /**

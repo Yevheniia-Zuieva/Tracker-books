@@ -16,7 +16,7 @@ const AUTH_URL = "http://localhost:8000/auth";
 /**
  * Екземпляр Axios для роботи з основними даними (книги, сесії, нотатки).
  * Налаштований на роботу з форматом JSON за замовчуванням.
- * @type {import('axios').AxiosInstance}
+ * @type {Object}
  */
 const API = axios.create({
   baseURL: API_BASE_URL,

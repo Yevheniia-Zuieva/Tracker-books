@@ -12,7 +12,7 @@ import { cn } from "./utils";
  * * @component
  * @param {Object} props - Властивості компонента.
  * @param {string} [props.className] - Додаткові CSS-класи для коригування зовнішнього вигляду.
- * @param {React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>} props.props - Усі стандартні атрибути кореневого елемента Radix UI Checkbox.
+ * @param {Object} props.props - Усі стандартні атрибути кореневого елемента Radix UI Checkbox.
  * @returns {React.JSX.Element} Рендерить доступний прапорець з анімованим індикатором вибору.
  */
 function Checkbox({ className, ...props }) {

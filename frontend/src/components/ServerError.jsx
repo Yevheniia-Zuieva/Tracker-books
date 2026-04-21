@@ -19,14 +19,21 @@ import { useLocation } from "react-router-dom";
  */
 
 const ServerError = () => {
-  /** @type {Object} Об'єкт поточного стану маршруту */
+  /**
+ * Об'єкт поточного стану маршруту
+ * @type {Object}
+ */
   const location = useLocation();
 
-  /** @type {URLSearchParams} Парсер параметрів запиту (query string) */
+  /**
+   * Парсер параметрів запиту
+   * @type {Object}
+   */
   const params = new URLSearchParams(location.search);
 
-  /** * @type {string} Унікальний код помилки, отриманий від бекенда.
-   * Якщо параметр відсутній, використовується дефолтне значення 'SERVER_ERR'.
+  /**
+   * Унікальний код помилки
+   * @type {string}
    */
   const errorId = params.get("id") || "SERVER_ERR";
 

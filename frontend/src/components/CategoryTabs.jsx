@@ -46,7 +46,10 @@ export function CategoryTabs({ activeCategory, onCategoryChange, bookCounts }) {
     <div className="bg-card p-3 md:p-4 rounded-lg shadow-sm border">
       <div className="flex flex-wrap gap-2">
         {categories.map(({ id, label, icon: Icon }) => {
-          /** @type {boolean} Перевірка, чи є поточна вкладка активною */
+          /**
+ * Перевірка, чи є поточна вкладка активною
+ * @type {boolean}
+ */
           const isActive = activeCategory === id;
 
           return (

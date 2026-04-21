@@ -29,13 +29,22 @@ import { Button } from "./ui/button";
  * @returns {React.JSX.Element} Головна сторінка з фільтрами та сіткою книг.
  */
 function HomePage() {
-  /** @type {[Array, Function]} Масив об'єктів книг поточної сторінки */
+  /**
+ * Масив об'єктів книг поточної сторінки
+ * @type {Array}
+ */
   const [books, setBooks] = useState([]);
 
-  /** @type {[boolean, Function]} Стан первинного завантаження бібліотеки */
+  /**
+ * Стан первинного завантаження бібліотеки
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(true);
 
-  /** @type {[Object, Function]} Об'єкт лічильників для бейджів категорій */
+  /**
+ * Об'єкт лічильників для бейджів категорій
+ * @type {Object}
+ */
   const [stats, setStats] = useState({
     all: 0,
     reading: 0,
@@ -44,16 +53,28 @@ function HomePage() {
     fav: 0,
   });
 
-  /** @type {[boolean, Function]} Стан завантаження додаткової порції даних (Infinity Scroll/Load More) */
+  /**
+ * Стан завантаження додаткової порції даних (Infinity Scroll/Load More)
+ * @type {boolean}
+ */
   const [isMoreLoading, setIsMoreLoading] = useState(false);
 
-  /** @type {[string, Function]} Поточний активний фільтр (all|reading|read|want-to-read|favorite) */
+  /**
+ * Поточний активний фільтр (all|reading|read|want-to-read|favorite)
+ * @type {string}
+ */
   const [currentFilter, setCurrentFilter] = useState("all");
 
-  /** @type {[string|null, Function]} Поточний метод сортування (genre|rating-asc|rating-desc) */
+  /**
+ * Поточний метод сортування (genre|rating-asc|rating-desc)
+ * @type {string|null}
+ */
   const [currentSort, setCurrentSort] = useState(null);
 
-  /** @type {[string|null, Function]} Посилання на наступну сторінку результатів від API */
+  /**
+ * Посилання на наступну сторінку результатів від API
+ * @type {string|null}
+ */
   const [nextPageUrl, setNextPageUrl] = useState(null);
 
   /**

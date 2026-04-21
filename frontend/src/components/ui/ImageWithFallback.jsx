@@ -23,10 +23,16 @@ export const ImageWithFallback = ({
   className,
   ...props
 }) => {
-  /** @type {[string|undefined, Function]} Стан поточного джерела зображення */
+  /**
+ * Стан поточного джерела зображення
+ * @type {string|undefined}
+ */
   const [imgSrc, setImgSrc] = useState(src);
 
-  /** @type {[boolean, Function]} Стан наявності критичної помилки завантаження */
+  /**
+ * Стан наявності критичної помилки завантаження
+ * @type {boolean}
+ */
   const [hasError, setHasError] = useState(false);
 
   /**

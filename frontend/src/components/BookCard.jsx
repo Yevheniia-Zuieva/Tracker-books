@@ -31,13 +31,22 @@ export function BookCard({
   onDelete,
   onNoteUpdate,
 }) {
-  /** @type {[boolean, Function]} Стан режиму редагування нотатки */
+  /**
+ * Стан режиму редагування нотатки
+ * @type {boolean}
+ */
   const [isEditingNote, setIsEditingNote] = useState(false);
 
-  /** @type {[string, Function]} Локальний стан тексту нотатки для редагування */
+  /**
+ * Локальний стан тексту нотатки для редагування
+ * @type {string}
+ */
   const [noteText, setNoteText] = useState(book.note || "");
 
-  /** @type {[Function, Function]} Навігація по маршрутах */
+  /**
+ * Навігація по маршрутах
+ * @type {Function}
+ */
   const navigate = useNavigate();
 
   /**

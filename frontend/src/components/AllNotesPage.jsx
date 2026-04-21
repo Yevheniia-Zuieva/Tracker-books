@@ -33,22 +33,40 @@ import { apiBooks } from "../api/ApiService";
 const AllNotesPage = () => {
   const navigate = useNavigate();
 
-  /** @type {[Array, Function]} Список книг, що містять нотатки */
+  /**
+ * Список книг, що містять нотатки
+ * @type {Array}
+ */
   const [books, setBooks] = useState([]);
 
-  /** @type {[boolean, Function]} Стан завантаження даних із сервера */
+  /**
+ * Стан завантаження даних із сервера
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(true);
 
-  /** @type {[string, Function]} Порядок сортування (newest|oldest|az|za) */
+  /**
+ * Порядок сортування (newest|oldest|az|za)
+ * @type {string}
+ */
   const [sortOrder, setSortOrder] = useState("newest");
 
-  /** @type {[boolean, Function]} Фільтр лише для обраних нотаток */
+  /**
+ * Фільтр лише для обраних нотаток
+ * @type {boolean}
+ */
   const [onlyFavorites, setOnlyFavorites] = useState(false);
 
-  /** @type {[number|null, Function]} ID нотатки, яка зараз редагується */
+  /**
+ * ID нотатки, яка зараз редагується
+ * @type {number|null}
+ */
   const [editingId, setEditingId] = useState(null);
 
-  /** @type {[string, Function]} Тимчасове значення тексту при редагуванні */
+  /**
+ * Тимчасове значення тексту при редагуванні
+ * @type {string}
+ */
   const [editValue, setEditValue] = useState("");
 
   /** Ефект початкового завантаження даних при монтуванні сторінки */

@@ -31,13 +31,22 @@ import { apiFeedback } from "../api/ApiService";
  * @returns {React.JSX.Element} Сторінка допомоги з формою зворотного зв'язку.
  */
 export default function HelpPage() {
-  /** @type {[boolean, Function]} Стан видимості форми відгуку */
+  /**
+ * Стан видимості форми відгуку
+ * @type {boolean}
+ */
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  /** @type {[string, Function]} Текст повідомлення від користувача */
+  /**
+ * Текст повідомлення від користувача
+ * @type {string}
+ */
   const [message, setMessage] = useState("");
 
-  /** @type {[boolean, Function]} Стан процесу відправки даних на сервер */
+  /**
+ * Стан процесу відправки даних на сервер
+ * @type {boolean}
+ */
   const [isSending, setIsSending] = useState(false);
 
   /**

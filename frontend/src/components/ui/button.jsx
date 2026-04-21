@@ -20,13 +20,22 @@ const Button = React.forwardRef(
     { className, variant = "default", size = "default", children, ...props },
     ref,
   ) => {
-    /** @type {string} Класи, що відповідають обраному візуальному стилю */
+    /**
+ * Класи, що відповідають обраному візуальному стилю
+ * @type {string}
+ */
     const variantClasses = buttonVariants[variant] || buttonVariants.default;
 
-    /** @type {string} Класи, що відповідають обраному розміру */
+    /**
+ * Класи, що відповідають обраному розміру
+ * @type {string}
+ */
     const sizeClasses = buttonSizes[size] || buttonSizes.default;
 
-    /** @type {string} Базові структурні класи, що застосовуються до всіх кнопок */
+    /**
+ * Базові структурні класи, що застосовуються до всіх кнопок
+ * @type {string}
+ */
     const baseClasses =
       "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive";
 

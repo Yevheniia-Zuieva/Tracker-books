@@ -24,10 +24,16 @@ import { apiBooks } from "../api/ApiService";
  * @returns {React.JSX.Element|null} Рендерить модальне вікно або null, якщо воно закрите.
  */
 export function AddBookDialog({ isOpen, onClose, onBookAdded }) {
-  /** @type {[boolean, Function]} Стан процесу відправки даних на сервер */
+  /**
+ * Стан процесу відправки даних на сервер
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(false);
 
-  /** * @type {[Object, Function]} Об'єкт стану форми з початковими значеннями. */
+  /**
+   * Об'єкт стану форми з початковими значеннями
+   * @type {Object}
+   */
   const [formData, setFormData] = useState({
     title: "",
     author: "",

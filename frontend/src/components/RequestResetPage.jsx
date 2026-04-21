@@ -26,16 +26,28 @@ import { Mail, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
  * @returns {React.JSX.Element} Рендерить форму введення email або повідомлення про успішну відправку.
  */
 export function RequestResetPage() {
-  /** @type {[string, Function]} Стан для зберігання введеної електронної пошти */
+  /**
+ * Стан для зберігання введеної електронної пошти
+ * @type {string}
+ */
   const [email, setEmail] = useState("");
 
-  /** @type {[boolean, Function]} Стан індикатора завантаження під час запиту до API */
+  /**
+ * Стан індикатора завантаження під час запиту до API
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(false);
 
-  /** @type {[boolean, Function]} Стан успішного завершення операції */
+  /**
+ * Стан успішного завершення операції
+ * @type {boolean}
+ */
   const [isSuccess, setIsSuccess] = useState(false);
 
-  /** @type {[string|null, Function]} Стан для зберігання повідомлення про помилку від сервера */
+  /**
+ * Стан для зберігання повідомлення про помилку від сервера
+ * @type {string|null}
+ */
   const [error, setError] = useState(null);
 
   /**

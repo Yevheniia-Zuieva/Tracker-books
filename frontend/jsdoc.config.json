@@ -1,0 +1,26 @@
+{
+  "plugins": ["node_modules/jsdoc-babel"],
+  "babel": {
+    "presets": ["@babel/preset-react"]
+  },
+  "source": {
+    "include": ["src"],
+    "exclude": ["src/components/ui"], 
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "opts": {
+    "template": "templates/default",
+    "recurse": true,
+    "destination": "../docs/frontend_html"
+  },
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": true,
+    "default": {
+      "outputSourceFiles": false, 
+      "includeDate": false,
+      "useLongnameInNav": false
+    }
+  }
+}

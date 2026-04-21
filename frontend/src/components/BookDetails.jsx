@@ -43,10 +43,16 @@ const BookDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  /** @type {[Object|null, Function]} Дані про книгу з бекенду */
+  /**
+ * Дані про книгу з бекенду
+ * @type {Object|null}
+ */
   const [book, setBook] = useState(null);
 
-  /** @type {[boolean, Function]} Стан процесу завантаження */
+  /**
+ * Стан процесу завантаження
+ * @type {boolean}
+ */
   const [isLoading, setIsLoading] = useState(true);
 
   // --- СТАНИ ТАЙМЕРА ТА РЕДАГУВАННЯ ---
