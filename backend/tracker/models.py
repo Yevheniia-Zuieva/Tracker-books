@@ -155,62 +155,66 @@ class Book(models.Model):
     note = models.TextField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        """Перевизначений метод збереження моделі.
+        """Перевизначений метод збереження моделі з інтегрованою бізнес-логікою життєвого циклу книги.
 
-        Автоматично розраховує відсоток прогресу читання на основі `currentPage`
-        та `totalPages`. Якщо статус змінюється на 'read', автоматично фіксує
-        `endDate` (якщо він не заданий) та встановлює `currentPage` рівним `totalPages`.
+        Цей метод діє як "запобіжник" та автоматизує рутинні оновлення даних перед фактичним
+        записом у базу даних. Він виконує чотири основні перевірки:
+
+        1. Динамічний прогрес: Автоматично обчислює поле `progress` (0-100%) на основі
+           відношення `currentPage` до `totalPages`.
+        2. Автоматичний фініш (Сторінки -> Статус): Якщо користувач вказав поточну сторінку,
+           яка дорівнює або перевищує загальну кількість сторінок, статус книги
+           автоматично змінюється на 'read'.
+        3. Авто-старт читання: При переході статусу в 'reading' автоматично фіксується
+           поточна дата у `startDate` (якщо вона ще не була встановлена).
+        4. Синхронізація завершення: При статусі 'read' автоматично встановлюється `endDate`.
+           Якщо статус змінено на 'read' вручну (або через API), але сторінки не оновлені,
+           метод примусово підтягує `currentPage` до максимуму та встановлює `progress` на 100%.
+
+        Args:
+            *args: Позиційні аргументи, що передаються в базовий метод `save` (наприклад, force_insert).
+            **kwargs: Іменовані аргументи (наприклад, update_fields).
 
         Raises:
-            Exception: У разі критичного збою при записі в базу даних.
+            Exception: У разі критичного збою при записі об'єкта в базу даних.
+                       Помилка перехоплюється для логування (CRITICAL), після чого прокидається далі.
         """
-        # Визначення, чи це створення нової книги, чи оновлення існуючої
-        is_new = self.pk is None
 
         # Розрахунок відсоткового прогресу
-        if self.totalPages and self.currentPage and self.totalPages > 0:
+        if self.totalPages and self.totalPages > 0:
             self.progress = min(100, round((self.currentPage / self.totalPages) * 100))
         else:
-            # Якщо сторінок 0, але книга в списку - це може бути помилка даних
-            if self.totalPages == 0:
-                logger.warning(f"Data Anomaly: Book ID {self.id} has 0 total pages.")
             self.progress = 0
 
-        # Автоматичне заповнення дати завершення та сторінок
-        if self.status == "read" and not self.endDate:
-            self.endDate = timezone.now().date()
-            logger.info(
-                f"Book Lifecycle: Status 'read' detected. Auto-setting endDate for Book ID {self.id}"
-            )
-
-        # Логування автоматичного корегування сторінок
+        # Якщо сторінки дійшли до кінця, автоматично робимо книгу прочитаною
         if (
-            self.status == "read"
-            and self.totalPages
-            and self.currentPage < self.totalPages
+            self.totalPages
+            and self.currentPage >= self.totalPages
+            and self.totalPages > 0
         ):
-            logger.debug(
-                f"Adjusting currentPage to totalPages for Book ID {self.id} due to 'read' status"
-            )
-            self.currentPage = self.totalPages
+            self.status = "read"
+
+        # Автоматична дата початку (якщо почали читати)
+        if self.status == "reading" and not self.startDate:
+            self.startDate = timezone.now().date()
+            logger.info(f"Book {self.id}: Start date set.")
+
+        # Автоматична дата завершення (якщо статус 'read')
+        if self.status == "read":
+            if not self.endDate:
+                self.endDate = timezone.now().date()
+
+            # На випадок, якщо статус змінили вручну, але сторінки не підтягнули
+            if self.totalPages and self.currentPage < self.totalPages:
+                self.currentPage = self.totalPages
+                self.progress = 100
+                logger.info(f"Book {self.id}: Status 'read' forced full progress.")
 
         try:
-            # Власне критична операція з базою даних
             super().save(*args, **kwargs)
-
-            # Логування успішного завершення операції
-            if is_new:
-                logger.info(f"DB Success: New book record created (ID: {self.id})")
-            else:
-                logger.debug(f"DB Success: Book record updated (ID: {self.id})")
-
         except Exception as e:
-            # Логування критичної помилки запису в БД
-            logger.critical(
-                f"DB Critical Error: Failed to save Book record. Reason: {str(e)}",
-                exc_info=True,
-            )
-            raise e  # Прокидаємо помилку далі
+            logger.critical(f"DB Error: {str(e)}")
+            raise e
 
     def __str__(self):
         """Повертає рядкове представлення книги.
@@ -313,3 +317,17 @@ class Quote(models.Model):
 
         """
         return f"Quote from {self.book.title}"
+
+
+class ReadingCycle(models.Model):
+    book = models.ForeignKey(
+        Book, on_delete=models.CASCADE, related_name="reading_cycles"
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        ordering = ["-end_date"]  # Останні прочитані будуть зверху
+
+    def __str__(self):
+        return f"{self.book.title}: {self.start_date} - {self.end_date}"
