@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { BookCard } from "./BookCard";
-import { apiBooks } from "../api/ApiService";
+import { apiBooks, apiNotesQuotes } from "../api/ApiService";
 import {
   Loader2,
   RotateCcw,
@@ -30,21 +30,21 @@ import { Button } from "./ui/button";
  */
 function HomePage() {
   /**
- * Масив об'єктів книг поточної сторінки
- * @type {Array}
- */
+   * Масив об'єктів книг поточної сторінки
+   * @type {Array}
+   */
   const [books, setBooks] = useState([]);
 
   /**
- * Стан первинного завантаження бібліотеки
- * @type {boolean}
- */
+   * Стан первинного завантаження бібліотеки
+   * @type {boolean}
+   */
   const [isLoading, setIsLoading] = useState(true);
 
   /**
- * Об'єкт лічильників для бейджів категорій
- * @type {Object}
- */
+   * Об'єкт лічильників для бейджів категорій
+   * @type {Object}
+   */
   const [stats, setStats] = useState({
     all: 0,
     reading: 0,
@@ -54,27 +54,27 @@ function HomePage() {
   });
 
   /**
- * Стан завантаження додаткової порції даних (Infinity Scroll/Load More)
- * @type {boolean}
- */
+   * Стан завантаження додаткової порції даних (Infinity Scroll/Load More)
+   * @type {boolean}
+   */
   const [isMoreLoading, setIsMoreLoading] = useState(false);
 
   /**
- * Поточний активний фільтр (all|reading|read|want-to-read|favorite)
- * @type {string}
- */
+   * Поточний активний фільтр (all|reading|read|want-to-read|favorite)
+   * @type {string}
+   */
   const [currentFilter, setCurrentFilter] = useState("all");
 
   /**
- * Поточний метод сортування (genre|rating-asc|rating-desc)
- * @type {string|null}
- */
+   * Поточний метод сортування (genre|rating-asc|rating-desc)
+   * @type {string|null}
+   */
   const [currentSort, setCurrentSort] = useState(null);
 
   /**
- * Посилання на наступну сторінку результатів від API
- * @type {string|null}
- */
+   * Посилання на наступну сторінку результатів від API
+   * @type {string|null}
+   */
   const [nextPageUrl, setNextPageUrl] = useState(null);
 
   /**
@@ -280,17 +280,67 @@ function HomePage() {
   };
 
   /**
-   * Оновлення особистої нотатки до книги.
+   * Зберігає або оновлює особисту нотатку до конкретної книги.
+   * * Функція перевіряє поточний стан книги: якщо в архіві вже є нотатки,
+   * вона оновлює найновішу з них. Якщо нотаток немає — створює новий запис.
+   * Після успішної відповіді від сервера локальний стан (`books`) оновлюється
+   * точково. Це запобігає повному перезавантаженню списку книг і зберігає
+   * поточну позицію прокрутки на екрані.
+   *
    * @async
-   * @param {number} id - ID книги.
-   * @param {string} note - Текст нотатки.
+   * @param {number} id - Унікальний ідентифікатор книги.
+   * @param {string} noteText - Актуальний текст нотатки для збереження.
+   * @returns {Promise<void>}
+   * @throws Виводить повідомлення про помилку (`alert`) та логує її в консоль у разі збою запиту.
    */
-  const handleNoteUpdate = async (id, note) => {
+  const handleNoteUpdate = async (id, noteText) => {
     try {
-      setBooks((prev) => prev.map((b) => (b.id === id ? { ...b, note } : b)));
-      await apiBooks.updateBook(id, { note });
+      // Знаходимо книгу в поточному стейті
+      const bookToUpdate = books.find((b) => b.id === id);
+      const notesArray = bookToUpdate?.book_notes || [];
+      const latestNote =
+        notesArray.length > 0 ? notesArray[notesArray.length - 1] : null;
+
+      let savedNote;
+
+      // Виконуємо запит до сервера
+      if (latestNote) {
+        // Оновлюємо існуючу останню нотатку
+        savedNote = await apiNotesQuotes.updateNote(latestNote.id, {
+          content: noteText,
+        });
+      } else {
+        // Створюємо нову, якщо архів був порожній
+        if (noteText.trim()) {
+          savedNote = await apiNotesQuotes.addNote(id, noteText);
+        }
+      }
+
+      // ОНОВЛЮЄМО СТАН ЛОКАЛЬНО
+      setBooks((prevBooks) =>
+        prevBooks.map((b) => {
+          if (b.id === id) {
+            // Створюємо копію масиву нотаток
+            const updatedNotes = [...(b.book_notes || [])];
+
+            if (latestNote) {
+              // Замінюємо останню нотатку оновленою від сервера
+              updatedNotes[updatedNotes.length - 1] = savedNote;
+            } else if (savedNote) {
+              // Додаємо щойно створену нотатку в масив
+              updatedNotes.push(savedNote);
+            }
+
+            return { ...b, book_notes: updatedNotes };
+          }
+          return b;
+        }),
+      );
+
+      console.log("Нотатка синхронізована локально, позиція збережена");
     } catch (error) {
-      console.error("Помилка нотатки:", error);
+      console.error("Помилка при збереженні нотатки:", error);
+      alert("Не вдалося зберегти нотатку");
     }
   };
 

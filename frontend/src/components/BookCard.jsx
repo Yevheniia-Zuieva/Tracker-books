@@ -32,21 +32,42 @@ export function BookCard({
   onNoteUpdate,
 }) {
   /**
- * Стан режиму редагування нотатки
- * @type {boolean}
- */
+   * Стан режиму редагування нотатки
+   * @type {boolean}
+   */
   const [isEditingNote, setIsEditingNote] = useState(false);
 
   /**
- * Локальний стан тексту нотатки для редагування
- * @type {string}
- */
-  const [noteText, setNoteText] = useState(book.note || "");
+   * Нормалізований масив нотаток.
+   * Підтримує різні формати відповіді від API (book_notes або notes)
+   * та запобігає помилкам, якщо масив відсутній.
+   * @type {Array<Object>}
+   */
+  const notesArray = book.book_notes || book.notes || [];
 
   /**
- * Навігація по маршрутах
- * @type {Function}
- */
+   * Текст найновішої нотатки для первинного відображення або редагування.
+   * Реалізує логіку зворотної сумісності (Backward Compatibility):
+   * 1. Бере контент останнього об'єкта з масиву нотаток.
+   * 2. Якщо масив порожній — робить fallback на застаріле текстове поле `book.note`.
+   * 3. Якщо нічого немає — повертає порожній рядок.
+   * @type {string}
+   */
+  const latestNoteText =
+    notesArray.length > 0
+      ? notesArray[notesArray.length - 1].content
+      : book.note || ""; // fallback на старе поле, якщо воно ще є в БД
+
+  /**
+   * Локальний стан тексту нотатки для редагування
+   * @type {string}
+   */
+  const [noteText, setNoteText] = useState(latestNoteText);
+
+  /**
+   * Навігація по маршрутах
+   * @type {Function}
+   */
   const navigate = useNavigate();
 
   /**
@@ -84,6 +105,7 @@ export function BookCard({
    */
   const handleSaveNote = (e) => {
     e.stopPropagation();
+    // Викликаємо функцію з HomePage (яка або оновить останню, або створить нову)
     if (onNoteUpdate) onNoteUpdate(book.id, noteText);
     setIsEditingNote(false);
   };
@@ -228,6 +250,8 @@ export function BookCard({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
+                  // Оновлюємо стейт перед редагуванням (на випадок, якщо дані змінилися ззовні)
+                  setNoteText(latestNoteText);
                   setIsEditingNote(true);
                 }}
                 className="h-5 px-1 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -249,7 +273,10 @@ export function BookCard({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setIsEditingNote(false)}
+                  onClick={() => {
+                    setNoteText(latestNoteText); // Відміна змін
+                    setIsEditingNote(false);
+                  }}
                   className="h-6 text-[10px]"
                 >
                   Скасувати
@@ -265,7 +292,8 @@ export function BookCard({
             </div>
           ) : (
             <p className="text-xs italic text-muted-foreground bg-muted/30 p-2 rounded line-clamp-2 leading-relaxed">
-              {book.note || "Нотатки відсутні..."}
+              {/* Відображаємо останню нотатку, або fallback-текст */}
+              {latestNoteText || "Нотатки відсутні..."}
             </p>
           )}
         </div>

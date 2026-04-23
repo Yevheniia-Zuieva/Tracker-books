@@ -34,6 +34,7 @@ const NotFound = lazy(() => import("./components/NotFound"));
 const ServerError = lazy(() => import("./components/ServerError"));
 const BookDetails = lazy(() => import("./components/BookDetails"));
 const AllNotesPage = lazy(() => import("./components/AllNotesPage"));
+const AllQuotesPage = lazy(() => import("./components/AllQuotesPage"));
 
 /**
  * Основний макет (Layout) застосунку для авторизованих користувачів.
@@ -201,16 +202,9 @@ function App() {
             <Route path="/help" element={<HelpPage />} />
             <Route path="/books/:id" element={<BookDetails />} />
             <Route path="/notes" element={<AllNotesPage />} />
+            <Route path="/quotes" element={<AllQuotesPage />} />
 
-            {/* Сторінки-заглушки для майбутнього функціоналу */}
-            <Route
-              path="/quotes"
-              element={
-                <div className="p-20 text-center">
-                  Сторінка всіх цитат (у розробці)
-                </div>
-              }
-            />
+            {/* Сторінка-заглушки для майбутнього функціоналу */}
             <Route
               path="/profile"
               element={
