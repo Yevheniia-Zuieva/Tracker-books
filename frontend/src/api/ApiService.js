@@ -289,6 +289,15 @@ export const apiBooks = {
     });
     return response.data;
   },
+
+/**
+   * Метод для архівації старого циклу та початку нового читання.
+   * Викликає @action start_re_reading у Django.
+   */
+  async startReReading(id) {
+    const response = await API.post(`/books/${id}/start_re_reading/`);
+    return response.data;
+  },
 };
 
 // --- НОТАТКИ ТА ЦИТАТИ ---
@@ -298,12 +307,15 @@ export const apiBooks = {
  */
 export const apiNotesQuotes = {
   /**
-   * Отримання всіх нотаток поточного користувача.
-   * @async
-   * @returns {Promise<Array>} Масив об'єктів нотаток.
+   * Отримання всіх нотаток з підтримкою пагінації.
+   * @param {string|null} url - Повний URL наступної сторінки або null для першої.
    */
-  async getAllNotes() {
-    const response = await API.get("/notes/");
+  getAllNotes: async (url = null) => {
+    // Якщо url передано (це повний шлях від Django), використовуємо його.
+    // Якщо ні — використовуємо стандартний відносний шлях.
+    const endpoint = url || "/notes/";
+    
+    const response = await API.get(endpoint); 
     return response.data;
   },
 
@@ -312,8 +324,11 @@ export const apiNotesQuotes = {
    * @async
    * @returns {Promise<Array>} Масив об'єктів цитат.
    */
-  async getAllQuotes() {
-    const response = await API.get("/quotes/");
+  async getAllQuotes(url = null, params = {}) {
+    const endpoint = url || "/quotes/";
+    const response = await API.get(endpoint, { 
+        params: url ? {} : params 
+      }); 
     return response.data;
   },
 

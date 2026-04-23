@@ -26,13 +26,13 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Book, Note, Quote, ReadingSession
+from .models import Book, Note, Quote, ReadingCycle, ReadingSession
 from .serializers import (
     BookSerializer,
     NoteSerializer,
@@ -161,7 +161,7 @@ class BookViewSet(UserFilteredModelViewSet):
 
         # Оптимізація запитів
         queryset = queryset.prefetch_related(
-            "reading_sessions", "book_notes", "book_quotes"
+            "reading_sessions", "book_notes", "book_quotes", "reading_cycles"
         )
 
         # --- ЛОГІКА ФІЛЬТРАЦІЇ ---
@@ -191,6 +191,49 @@ class BookViewSet(UserFilteredModelViewSet):
             queryset = queryset.order_by("-addedDate")
 
         return queryset
+    
+    @action(detail=True, methods=['post'])
+    def start_re_reading(self, request, pk=None):
+        """Користувацька дія (Custom Action) для початку повторного читання книги.
+
+        Цей метод ініціює новий цикл читання. Якщо книга вже була прочитана 
+        (має дати початку та завершення), поточний період архівується у нову 
+        сутність `ReadingCycle` для збереження історії. Після цього прогрес 
+        книги обнуляється для нового старту.
+
+        Args:
+            request (Request): Об'єкт HTTP-запиту.
+            pk (int, optional): Первинний ключ книги (витягується з URL автоматично).
+
+        Returns:
+            Response: HTTP 200 із серіалізованими даними оновленої книги, 
+            включно з оновленим масивом `reading_cycles`.
+        """
+        
+        book = self.get_object()
+
+        # Перевірка, чи є що архівувати
+        if book.startDate and book.endDate:
+            ReadingCycle.objects.create(
+                book=book,
+                start_date=book.startDate,
+                end_date=book.endDate
+            )
+            logger.info(f"Цикл архівовано для книги {book.id}")
+        else:
+            # Якщо дат немає, можливо, користувач просто хоче скинути прогрес
+            logger.warning(f"Дати відсутні, архів не створено для {book.id}")
+
+        # Скид книги для нового читання
+        book.startDate = timezone.now().date()
+        book.endDate = None
+        book.currentPage = 0
+        book.status = 'reading'
+        book.save()
+
+        # Повернення оновленої книги з усім списком циклів
+        serializer = self.get_serializer(book)
+        return Response(serializer.data)
 
 
 class ReadingSessionViewSet(viewsets.ModelViewSet):
@@ -258,11 +301,48 @@ class NoteViewSet(UserFilteredModelViewSet):
 
 
 class QuoteViewSet(UserFilteredModelViewSet):
-    """ViewSet для управління цитатами користувача."""
+    """ViewSet для управління колекцією цитат користувача.
 
+    Успадковує логіку ізоляції даних від `UserFilteredModelViewSet` 
+    (користувач взаємодіє лише з власними записами). Реалізує серверну 
+    фільтрацію та динамічне сортування для коректної роботи з пагінацією 
+    на клієнтській стороні (React).
+    """
+    
     queryset = Quote.objects.all()
     serializer_class = QuoteSerializer
-    filter_fields = ["isFavorite"]
+
+    def get_queryset(self):
+        """Формує набір даних (QuerySet) на основі параметрів HTTP-запиту.
+
+        Перехоплює базовий запит (який вже відфільтровано за поточним користувачем)
+        та застосовує додаткові правила фільтрації й сортування, якщо вони
+        передані в URL.
+
+        Query Parameters (URL):
+            isFavorite (str): Якщо дорівнює 'true', залишає лише обрані цитати.
+            ordering (str): Вказує поле для сортування (наприклад, '-createdAt' 
+                для нових записів спочатку, або 'book__title' за алфавітом).
+
+        Returns:
+            QuerySet: Кінцевий набір об'єктів `Quote`, готовий до серіалізації 
+            та розбиття на сторінки (пагінації).
+        """
+        
+        # Базовий набір (цитати поточного юзера)
+        queryset = super().get_queryset()
+        
+        # Фільтрація за обраним 
+        is_favorite = self.request.query_params.get('isFavorite')
+        if is_favorite == 'true':
+            queryset = queryset.filter(isFavorite=True)
+            
+        # Сортування 
+        ordering = self.request.query_params.get('ordering')
+        if ordering:
+            queryset = queryset.order_by(ordering)
+            
+        return queryset
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
