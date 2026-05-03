@@ -35,7 +35,7 @@ const ServerError = lazy(() => import("./components/ServerError"));
 const BookDetails = lazy(() => import("./components/BookDetails"));
 const AllNotesPage = lazy(() => import("./components/AllNotesPage"));
 const AllQuotesPage = lazy(() => import("./components/AllQuotesPage"));
-
+const AccountPage = lazy(() => import("./components/AccountPage")); 
 /**
  * Основний макет (Layout) застосунку для авторизованих користувачів.
  * * Забезпечує єдину структуру інтерфейсу: Header -> Main Content -> Footer.
@@ -203,16 +203,7 @@ function App() {
             <Route path="/books/:id" element={<BookDetails />} />
             <Route path="/notes" element={<AllNotesPage />} />
             <Route path="/quotes" element={<AllQuotesPage />} />
-
-            {/* Сторінка-заглушки для майбутнього функціоналу */}
-            <Route
-              path="/profile"
-              element={
-                <div className="p-20 text-center">
-                  Налаштування акаунту (у розробці)
-                </div>
-              }
-            />
+            <Route path="/profile" element={<AccountPage />} />
           </Route>
 
           {/* 404 - Сторінка не знайдена */}

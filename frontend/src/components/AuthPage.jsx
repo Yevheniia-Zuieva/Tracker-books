@@ -29,7 +29,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { apiAuth } from "../api/ApiService";
+import { apiAuth, apiUser } from "../api/ApiService";
 
 /**
  * Компонент сторінки автентифікації.
@@ -92,7 +92,7 @@ export function AuthPage({ onAuth }) {
       await apiAuth.login(loginData.email, loginData.password);
 
       // Отримання профілю користувача
-      const userProfile = await apiAuth.getProfile();
+      const userProfile = await apiUser.getProfile();
 
       const token = localStorage.getItem("access_token") || "";
       onAuth(userProfile, token);
@@ -176,7 +176,7 @@ export function AuthPage({ onAuth }) {
 
       // Успішна реєстрація -> Автоматичний вхід
       await apiAuth.login(registerData.email, registerData.password);
-      const userProfile = await apiAuth.getProfile();
+      const userProfile = await apiUser.getProfile();
       const token = localStorage.getItem("access_token") || "";
       onAuth(userProfile, token);
     } catch (error) {
