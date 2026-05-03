@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { apiUser } from '../api/ApiService';
+
+const BASE_URL = "http://localhost:8000";
 
 /**
  * Компонент Header.
@@ -51,6 +54,8 @@ export function Header({ user, onLogout }) {
  */
   const dropdownRef = useRef(null);
 
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
   // Хуки маршрутизації
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,13 +65,40 @@ export function Header({ user, onLogout }) {
    * Реєструє глобальний слухач подій mousedown для виявлення кліків поза контейнером меню.
    */
   useEffect(() => {
+    // 1. Логіка кліку поза меню
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    
+    //Логіка завантаження аватара
+    const fetchHeaderProfile = async () => {
+      try {
+        const profile = await apiUser.getProfile();
+        if (profile.avatar) {
+          const fullUrl = profile.avatar.startsWith('http') 
+            ? profile.avatar 
+            : `${BASE_URL}${profile.avatar.startsWith('/') ? '' : '/'}${profile.avatar}`;
+          setAvatarUrl(fullUrl);
+        }
+      } catch (error) {
+        console.error("Не вдалося завантажити аватар для хедера", error);
+      }
+    };
+
+    fetchHeaderProfile();
+
+    // Слухаємо сигнал від AccountPage
+    window.addEventListener("profileUpdated", fetchHeaderProfile);
+
+    // ОЧИЩЕННЯ
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      // Обов'язково видаляємо слухач при демонтажі компонента
+      window.removeEventListener("profileUpdated", fetchHeaderProfile);
+    };
   }, []);
 
   /**
@@ -133,9 +165,20 @@ export function Header({ user, onLogout }) {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center gap-2 p-1.5 rounded-full hover:bg-muted transition-colors border border-transparent hover:border-border"
             >
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <UserIcon className="h-4 w-4" />
+              {/* === ОНОВЛЕНИЙ БЛОК АВАТАРА === */}
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden border border-primary/20">
+                {avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt="Аватар" 
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="h-4 w-4" />
+                )}
               </div>
+              {/* ================================== */}
+              
               <span className="hidden md:inline text-sm font-medium pr-1">
                 {user?.username || "Користувач"}
               </span>

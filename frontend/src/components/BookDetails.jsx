@@ -44,59 +44,34 @@ const BookDetails = () => {
   const navigate = useNavigate();
 
   // --- СТАНИ ОСНОВНИХ ДАНИХ ---
-  /** @type {[Object|null, Function]} Дані про книгу з сервера */
   const [book, setBook] = useState(null);
-
-  /** @type {[boolean, Function]} Стан початкового завантаження сторінки */
   const [isLoading, setIsLoading] = useState(true);
 
   // --- СТАНИ ТАЙМЕРА ТА РЕДАГУВАННЯ ---
-  /** @type {[boolean, Function]} Чи запущено зараз таймер читання */
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-
-  /** @type {[number, Function]} Поточний час таймера в секундах */
   const [seconds, setSeconds] = useState(0);
-
-  /** @type {[boolean, Function]} Режим редагування поточної сторінки */
   const [isEditingProgress, setIsEditingProgress] = useState(false);
-
-  /** @type {[boolean, Function]} Режим ручного редагування дат початку/кінця */
   const [isEditingDates, setIsEditingDates] = useState(false);
-
-  /** @type {[boolean, Function]} Чи показувати повну історію сесій */
   const [showAllSessions, setShowAllSessions] = useState(false);
 
+  // --- СТАНИ МОДАЛКИ ПОВТОРНОГО ЧИТАННЯ ---
+  const [showReReadModal, setShowReReadModal] = useState(false);
+  const [newStartDate, setNewStartDate] = useState("");
+
   // --- СТАНИ ДЛЯ НОТАТОК ТА ЦИТАТ ---
-  /** @type {[string, Function]} Текст поточної нотатки в полі вводу */
   const [localNote, setLocalNote] = useState("");
-
-  /** @type {[string, Function]} Статус збереження нотатки ('idle' | 'saving' | 'saved') */
   const [noteStatus, setNoteStatus] = useState("idle");
-
-  /** @type {[number|null, Function]} ID нотатки, що редагується (null для нової) */
   const [activeNoteId, setActiveNoteId] = useState(null);
-
-  /** @type {[string, Function]} Текст поточної цитати в полі вводу */
+  
   const [newQuote, setNewQuote] = useState("");
-
-  /** @type {[number|null, Function]} ID цитати, що редагується (null для нової) */
   const [activeQuoteId, setActiveQuoteId] = useState(null);
-
-  /** @type {[string, Function]} Тимчасове значення сторінки під час редагування */
+  
   const [tempPage, setTempPage] = useState("");
-
-  /** @type {[string, Function]} Повідомлення про помилку валідації сторінки */
   const [pageError, setPageError] = useState("");
-
-  /** @type {[{startDate: string, endDate: string}, Function]} Тимчасові дати */
   const [dates, setDates] = useState({ startDate: "", endDate: "" });
 
   /**
    * Завантажує всі дані про книгу з сервера.
-   * Викликається при монтуванні та після певних мутацій даних.
-   * @async
-   * @function
-   * @param {boolean} [isInitialLoad=false] - Вказує, чи це перше завантаження сторінки.
    */
   const fetchBookData = useCallback(async () => {
     try {
@@ -115,13 +90,11 @@ const BookDetails = () => {
     }
   }, [id]);
 
-  /** Ефект початкового завантаження та прокрутки вгору */
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchBookData(true);
+    fetchBookData();
   }, [id, fetchBookData]);
 
-  /** Ефект управління інтервалом таймера читання */
   useEffect(() => {
     let interval;
     if (isTimerRunning) {
@@ -130,9 +103,6 @@ const BookDetails = () => {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  /** * Обчислює загальний час усіх сесій читання у секундах.
-   * @type {number}
-   */
   const totalSeconds = useMemo(() => {
     return (book?.readingSessions || []).reduce(
       (acc, s) => acc + s.duration,
@@ -140,33 +110,20 @@ const BookDetails = () => {
     );
   }, [book]);
 
-  // --- ЛОГІКА ПЕРЕВІРКИ ЗМІН ---
-
-  /** * Перевіряє, чи відрізняється текст у полі нотатки від оригіналу на сервері.
-   * @type {boolean}
-   */
   const isNoteModified = useMemo(() => {
     const original =
       book?.book_notes?.find((n) => n.id === activeNoteId)?.content || "";
     return localNote !== original;
   }, [localNote, book, activeNoteId]);
 
-  /** * Перевіряє, чи відрізняється текст у полі цитати від оригіналу на сервері.
-   * @type {boolean}
-   */
   const isQuoteModified = useMemo(() => {
     const original =
       book?.book_quotes?.find((q) => q.id === activeQuoteId)?.content || "";
     return newQuote !== original;
   }, [newQuote, book, activeQuoteId]);
 
-  // --- ФУНКЦІЇ ПРОГРЕСУ ---
+  // --- ФУНКЦІЇ ПРОГРЕСУ ТА СТАТУСІВ ---
 
-  /**
-   * Обробляє ручне оновлення поточної сторінки користувачем.
-   * Валідує дані та автоматично вираховує наступний статус книги.
-   * @async
-   */
   const handlePageUpdate = async () => {
     const newPage = parseInt(tempPage, 10);
     if (isNaN(newPage) || newPage < 0) {
@@ -197,59 +154,63 @@ const BookDetails = () => {
   };
 
   /**
-   * Викликає кастомний Action на сервері для архівування поточного періоду
-   * читання та скидання прогресу до 0 для повторного читання.
-   * @async
+   * Відкриває модальне вікно для повторного читання
+   * та встановлює сьогоднішню дату за замовчуванням.
    */
-  const handleStartReReading = async () => {
-    if (
-      !window.confirm(
-        "Почати читати знову? Попередній результат буде збережено в історії.",
-      )
-    )
-      return;
+  const handleOpenReReadModal = () => {
+    setNewStartDate(new Date().toISOString().split("T")[0]);
+    setShowReReadModal(true);
+  };
+
+  /**
+   * Логіка повторного читання.
+   * 1. Архівує минулий цикл на бекенді.
+   * 2. Встановлює нову дату, яку обрав користувач.
+   * 3. Примусово оновлює всі дані (fetchBookData), щоб історія з'явилася миттєво.
+   */
+  const submitReRead = async () => {
     try {
-      const updatedBook = await apiBooks.startReReading(id);
-      setBook(updatedBook);
+      await apiBooks.startReReading(id);
+      
+      // Якщо користувач обрав іншу дату, оновлюємо її окремо
+      if (newStartDate) {
+        await apiBooks.updateBook(id, { startDate: newStartDate });
+      }
+
+      await fetchBookData(); 
       setTempPage(0);
-      alert("Книгу скинуто. Приємного повторного читання! 📚");
+      setShowReReadModal(false);
     } catch (err) {
       console.error("Помилка:", err);
+      alert("Не вдалося розпочати нове читання.");
     }
   };
 
   // --- ФУНКЦІЇ НОТАТОК ТА ЦИТАТ ---
 
-  /**
-   * Зберігає нову або оновлює існуючу нотатку.
-   * @async
-   */
   const handleSaveNote = async () => {
     if (!localNote.trim()) return;
     setNoteStatus("saving");
     try {
       if (activeNoteId) {
+        // Оновлюємо існуючу
         await apiNotesQuotes.updateNote(activeNoteId, { content: localNote });
       } else {
-        const res = await apiNotesQuotes.addNote(id, localNote);
-        setActiveNoteId(res.id); // Щоб після збереження залишитись у режимі редагування цієї ж нотатки, або можна скинути в null
-        setLocalNote(""); // Очищуємо поле після збереження нової
-        setActiveNoteId(null);
+        // Створюємо нову
+        await apiNotesQuotes.addNote(id, localNote);
       }
+      
+      setLocalNote("");
+      setActiveNoteId(null);
+      
       setNoteStatus("saved");
-      fetchBookData(false);
+      fetchBookData(); // Оновлюємо дані на екрані
       setTimeout(() => setNoteStatus("idle"), 3000);
     } catch (err) {
-      console.error("Помилка збереження сесії:", err);
-      alert("Не вдалося зберегти сесію. Спробуйте ще раз.");
+      console.error("Помилка збереження нотатки:", err);
     }
   };
 
-  /**
-   * Видаляє вибрану нотатку.
-   * @async
-   * @param {number} noteId - ID нотатки.
-   */
   const handleDeleteNote = async (noteId) => {
     if (!window.confirm("Видалити цю нотатку?")) return;
     try {
@@ -258,16 +219,10 @@ const BookDetails = () => {
         setActiveNoteId(null);
         setLocalNote("");
       }
-      fetchBookData(false);
-    } catch (err) {
-      console.error(err);
-    }
+      fetchBookData();
+    } catch (err) { console.error(err); }
   };
 
-  /**
-   * Зберігає нову або оновлює існуючу цитату.
-   * @async
-   */
   const handleSaveQuote = async () => {
     if (!newQuote.trim()) return;
     try {
@@ -276,49 +231,27 @@ const BookDetails = () => {
       else await apiNotesQuotes.addQuote(id, newQuote);
       setNewQuote("");
       setActiveQuoteId(null);
-      fetchBookData(false);
-    } catch (err) {
-      console.error(err);
-    }
+      fetchBookData();
+    } catch (err) { console.error(err); }
   };
 
-  /**
-   * Видаляє вибрану цитату.
-   * @async
-   * @param {number} quoteId - ID цитати.
-   */
   const handleDeleteQuote = async (quoteId) => {
     if (!window.confirm("Видалити цитату?")) return;
     try {
       await apiNotesQuotes.deleteQuote(quoteId);
-      fetchBookData(false);
-    } catch (err) {
-      console.error(err);
-    }
+      fetchBookData();
+    } catch (err) { console.error(err); }
   };
 
-  /**
-   * Універсальна функція для оновлення будь-якого поля книги.
-   * @async
-   * @param {string} field - Назва поля моделі (наприклад, 'rating', 'isFavorite').
-   * @param {any} value - Нове значення поля.
-   */
   const handleUpdateField = async (field, value) => {
     try {
       const updated = await apiBooks.updateBook(id, { [field]: value });
       setBook((prev) => ({ ...prev, ...updated }));
       if (field === "startDate" || field === "endDate")
         setIsEditingDates(false);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  /**
-   * Форматує секунди у читабельний рядок годин, хвилин та секунд.
-   * @param {number} s - Кількість секунд.
-   * @returns {string} Відформатований час (напр., "1г 5хв 30с").
-   */
   const formatTotalTime = (s) => {
     if (!s) return "0с";
     const h = Math.floor(s / 3600);
@@ -326,20 +259,13 @@ const BookDetails = () => {
     return `${h}г ${m}хв ${s % 60}с`;
   };
 
-  /**
-   * Завершує поточну сесію читання, зупиняє таймер та зберігає результат на сервер.
-   * @async
-   */
   const handleFinishSession = async () => {
     setIsTimerRunning(false);
     try {
       await apiBooks.addSession(id, { duration: seconds });
       setSeconds(0);
-      fetchBookData(false);
-    } catch (err) {
-      console.error("Помилка збереження сесії:", err);
-      alert("Не вдалося зберегти сесію. Спробуйте ще раз.");
-    }
+      fetchBookData();
+    } catch (err) { console.error("Помилка збереження сесії:", err); }
   };
 
   // --- РЕНДЕРИНГ ---
@@ -391,10 +317,10 @@ const BookDetails = () => {
               </Badge>
               {book.status === "read" && (
                 <Button
-                  onClick={handleStartReReading}
+                  onClick={handleOpenReReadModal}
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] font-bold gap-1 rounded-full border-primary text-primary hover:bg-primary/10"
+                  className="h-6 text-[10px] font-bold gap-1 rounded-full border-primary text-primary hover:bg-primary/10 transition-colors"
                 >
                   <RotateCcw size={12} /> ЧИТАТИ ЗНОВУ
                 </Button>
@@ -741,14 +667,12 @@ const BookDetails = () => {
                 {book.book_notes?.map((n) => (
                   <div
                     key={n.id}
-                    // ТУТ ЗМІНЕНО ДИЗАЙН КАРТКИ НОТАТКИ
                     className={`group p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden ${
                       activeNoteId === n.id
                         ? "border-primary bg-primary/[0.03] shadow-md scale-[1.01]"
                         : "bg-background border-border/60 shadow-sm hover:border-primary/30 hover:shadow-md"
                     }`}
                   >
-                    {/* Декоративна смужка зліва для кращого розділення */}
                     <div
                       className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors ${activeNoteId === n.id ? "bg-primary" : "bg-muted-foreground/20 group-hover:bg-primary/40"}`}
                     />
@@ -862,13 +786,11 @@ const BookDetails = () => {
                         : "bg-background border-border/60 shadow-sm hover:border-primary/30 hover:shadow-md"
                     }`}
                   >
-                    {/* Кольорова смужка зліва */}
                     <div
                       className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors ${activeQuoteId === q.id ? "bg-primary" : "bg-primary/20 group-hover:bg-primary/40"}`}
                     />
 
                     <div className="flex justify-between items-start gap-4 pl-2 relative">
-                      {/* Декоративні великі лапки на фоні */}
                       <Quote className="absolute -top-2 -left-2 w-8 h-8 text-primary/10 rotate-12 z-0" />
 
                       <div className="flex-1 relative z-10">
@@ -973,6 +895,51 @@ const BookDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* МОДАЛЬНЕ ВІКНО ПОВТОРНОГО ЧИТАННЯ */}
+      {showReReadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-6 border animate-in zoom-in-95">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+                <RotateCcw size={24} />
+              </div>
+              <h3 className="text-xl font-black">Нова подорож книгою</h3>
+              <p className="text-sm text-muted-foreground">
+                Ви вже прочитали цю книгу. Попередній прогрес та дати будуть надійно збережені у вашому архіві.
+              </p>
+            </div>
+
+            <div className="space-y-2 bg-muted/30 p-4 rounded-2xl border">
+              <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">
+                Дата початку нового читання
+              </label>
+              <Input
+                type="date"
+                value={newStartDate}
+                onChange={(e) => setNewStartDate(e.target.value)}
+                className="bg-background cursor-pointer"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button 
+                variant="outline" 
+                className="flex-1 rounded-xl" 
+                onClick={() => setShowReReadModal(false)}
+              >
+                Скасувати
+              </Button>
+              <Button 
+                className="flex-1 rounded-xl gap-2 font-bold" 
+                onClick={submitReRead}
+              >
+                <Play size={16} /> Почати читати
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

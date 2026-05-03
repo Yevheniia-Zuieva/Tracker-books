@@ -196,6 +196,7 @@ export function BookCard({
         </div>
 
         {/* СТАТУС ТА ДІЯ */}
+        {/* СТАТУС ТА ДІЯ */}
         <div className="mt-4 flex items-center justify-between py-2 border-y border-border/50">
           <div className="flex items-center gap-2">
             <div
@@ -209,17 +210,30 @@ export function BookCard({
                   : "В планах"}
             </span>
           </div>
-          <Button
-            size="sm"
-            variant={action.variant}
-            className="h-7 text-[10px] font-bold"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStatusChange(book.id, action.nextStatus);
-            }}
-          >
-            {action.text} <ArrowRight className="w-3 h-3 ml-1" />
-          </Button>
+          
+          {/* Умовний рендер: якщо прочитано - плашка, інакше - кнопка дії */}
+          {book.status === "read" ? (
+            <div 
+              title="Щоб почати читати знову та зберегти архів, перейдіть на сторінку деталей книги"
+              onClick={(e) => e.stopPropagation()} 
+            >
+              <Badge variant="secondary" className="cursor-help bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20 text-[10px] uppercase font-bold px-2 py-1">
+                В архіві
+              </Badge>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant={action.variant}
+              className="h-7 text-[10px] font-bold"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusChange(book.id, action.nextStatus);
+              }}
+            >
+              {action.text} <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          )}
         </div>
 
         {/* ПРОГРЕС */}
