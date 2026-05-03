@@ -67,27 +67,6 @@ export const apiAuth = {
   },
 
   /**
-   * Отримання даних профілю поточного користувача.
-   * @async
-   * @returns {Promise<Object>} Об'єкт профілю користувача.
-   */
-  async getProfile() {
-    const response = await API.get("/profile/");
-    return response.data;
-  },
-
-  /**
-   * Оновлення даних профілю (ім'я, біографія, цілі).
-   * @async
-   * @param {Object} updates - Часткові оновлення даних профілю.
-   * @returns {Promise<Object>} Оновлений об'єкт профілю.
-   */
-  async updateProfile(updates) {
-    const response = await API.patch("/profile/", updates);
-    return response.data;
-  },
-
-  /**
    * Вихід із системи. Видаляє токени та завершує сесію.
    */
   logout() {
@@ -185,6 +164,38 @@ API.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// --- СЕРВІС КОРИСТУВАЧА ---
+/**
+ * @namespace apiUser
+ * @description Сервіс для управління даними профілю та налаштуваннями користувача.
+ */
+export const apiUser = {
+  /**
+   * Отримання даних профілю поточного користувача.
+   * @async
+   * @returns {Promise<Object>} Об'єкт профілю користувача.
+   */
+  async getProfile() {
+    const response = await API.get("/profile/");
+    return response.data;
+  },
+
+  /**
+   * Оновлення даних профілю (ім'я, біографія, цілі).
+   * @async
+   * @param {Object} updates - Часткові оновлення даних профілю.
+   * @returns {Promise<Object>} Оновлений об'єкт профілю.
+   */
+  updateProfile: async (formData) => {
+    const response = await API.patch('/profile/', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data', 
+        },
+    });
+    return response.data;
+  },
+};
 
 // --- СЕРВІС КНИГ ---
 /**

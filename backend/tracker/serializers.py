@@ -43,8 +43,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     """
 
-    status = serializers.CharField(source="bio", read_only=True)
-
     class Meta:
         """Мета-дані профілю користувача."""
 
@@ -53,13 +51,13 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "username",
+            'status',
             "bio",
             "yearly_goal",
             "avatar",
             "date_joined",
-            "status",
         )
-        read_only_fields = ("email", "date_joined", "status")
+        read_only_fields = ("email", "date_joined")
 
 
 class QuoteSerializer(serializers.ModelSerializer):
@@ -134,7 +132,7 @@ class ReadingSessionSerializer(serializers.ModelSerializer):
         """Конфігурація сесії читання."""
 
         model = ReadingSession
-        fields = ("id", "book", "date", "duration", "note")
+        fields = ("id", "book", "date", "pages_read", "duration", "note")
         read_only_fields = ("date",)
 
 
@@ -191,6 +189,7 @@ class BookSerializer(serializers.ModelSerializer):
             "currentPage",
             "cover",
             "addedDate",
+            "updatedAt",
             "description",
             "note",
             "startDate",
@@ -204,7 +203,7 @@ class BookSerializer(serializers.ModelSerializer):
             "ratingsCount",
             "isCustom",
         )
-        read_only_fields = ("progress", "addedDate")
+        read_only_fields = ("progress", "addedDate", "updatedAt")
 
         def validate(self, data):
             """Користувацька валідація даних книги.
