@@ -20,7 +20,7 @@ class CustomUserAdmin(UserAdmin):
     model = User
     # Визначає групування полів у формі редагування
     fieldsets = UserAdmin.fieldsets + (
-        ("Додаткова інформація", {"fields": ("bio", "yearly_goal", "avatar")}),
+        ("Додаткова інформація", {"fields": ("status", "bio", "yearly_goal", "avatar")}),
     )
     # Стовпці, що відображаються в списку всіх користувачів
     list_display = ("email", "username", "yearly_goal", "is_staff", "date_joined")

@@ -42,3 +42,7 @@ docs/frontend_html/
 
 # Звіти про аналіз бандла
 frontend/bundle-stats.html
+
+# Медіа
+media/
+avatars/

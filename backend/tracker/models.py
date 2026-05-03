@@ -58,6 +58,14 @@ class User(AbstractUser):
 
     #: Список полів, що вимагаються при створенні суперкористувача.
     REQUIRED_FIELDS = ["username"]
+    
+    status = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        default="Активний читач",
+        help_text="Короткий статус користувача"
+    )
 
     bio = models.TextField(blank=True, null=True)
     yearly_goal = models.IntegerField(
@@ -150,6 +158,7 @@ class Book(models.Model):
 
     # Хронологія та нотатки
     addedDate = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
     startDate = models.DateField(null=True, blank=True)
     endDate = models.DateField(null=True, blank=True)
     note = models.TextField(null=True, blank=True)
@@ -180,6 +189,17 @@ class Book(models.Model):
                        Помилка перехоплюється для логування (CRITICAL), після чого прокидається далі.
         """
 
+        # ЗАПАМ'ЯТОВУЄМО СТАН ДО ЗБЕРЕЖЕННЯ 
+        old_current_page = 0
+        is_new = self.pk is None
+        
+        if not is_new:
+            try:
+                old_book = Book.objects.get(pk=self.pk)
+                old_current_page = old_book.currentPage
+            except Book.DoesNotExist:
+                pass
+            
         # Розрахунок відсоткового прогресу
         if self.totalPages and self.totalPages > 0:
             self.progress = min(100, round((self.currentPage / self.totalPages) * 100))
@@ -212,6 +232,18 @@ class Book(models.Model):
 
         try:
             super().save(*args, **kwargs)
+            
+            # АВТОМАТИЧНЕ ЛОГУВАННЯ СЕСІЇ 
+            delta_pages = self.currentPage - old_current_page
+            
+            # Якщо користувач прочитав хоча б 1 сторінку, автоматично створюємо сесію
+            if delta_pages > 0:
+                ReadingSession.objects.create(
+                    book=self,
+                    pages_read=delta_pages,
+                    duration=0  # За замовчуванням 0, якщо не передано з фронтенду
+                )
+                
         except Exception as e:
             logger.critical(f"DB Error: {str(e)}")
             raise e
@@ -243,9 +275,14 @@ class ReadingSession(models.Model):
     book = models.ForeignKey(
         Book, on_delete=models.CASCADE, related_name="reading_sessions"
     )
-    date = models.DateField(auto_now_add=True)
-    duration = models.IntegerField(help_text="Тривалість у секундах")
+    date = models.DateTimeField(auto_now_add=True)
+    pages_read = models.IntegerField(default=0, help_text="Кількість прочитаних сторінок за сесію")
+    duration = models.IntegerField(help_text="Тривалість у секундах", null=True, blank=True, default=0)
     note = models.TextField(blank=True, null=True)
+    quote = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ["-date"] # Найновіші сесії зверху
 
     def __str__(self):
         """Повертає рядкове представлення сесії читання.
@@ -254,7 +291,7 @@ class ReadingSession(models.Model):
             str: Рядок із зазначенням назви книги та дати сесії.
 
         """
-        return f"Session for {self.book.title} on {self.date}"
+        return f"+{self.pages_read} pages for {self.book.title} on {self.date.strftime('%Y-%m-%d')}"
 
 
 class Note(models.Model):
