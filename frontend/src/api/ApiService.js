@@ -195,6 +195,16 @@ export const apiUser = {
     });
     return response.data;
   },
+
+  /**
+   * Повне видалення облікового запису користувача.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async deleteProfile() {
+    // API автоматично додасть ваш токен авторизації завдяки інтерцепторам
+    await API.delete('/profile/');
+  },
 };
 
 // --- СЕРВІС КНИГ ---

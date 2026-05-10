@@ -13,7 +13,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-import { apiAuth } from "./api/ApiService";
+import { apiAuth, apiUser } from "./api/ApiService";
 import { Loader2 } from "lucide-react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
@@ -21,21 +21,21 @@ import { Footer } from "./components/Footer";
 // Ледаче завантаження сторінок для оптимізації швидкості
 // Використовується для завантаження компонентів сторінок лише тоді, коли вони необхідні,
 // що значно скорочує розмір початкового бандла та час першого рендерингу.
-const AuthPage = lazy(() => import("./components/AuthPage"));
-const HomePage = lazy(() => import("./components/HomePage"));
-const SearchPage = lazy(() => import("./components/SearchPage"));
-const AboutPage = lazy(() => import("./components/AboutPage"));
-const HelpPage = lazy(() => import("./components/HelpPage"));
-const RequestResetPage = lazy(() => import("./components/RequestResetPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
+const RequestResetPage = lazy(() => import("./pages/RequestResetPage"));
 const ResetPasswordConfirmPage = lazy(
-  () => import("./components/ResetPasswordConfirmPage"),
+  () => import("./pages/ResetPasswordConfirmPage"),
 );
-const NotFound = lazy(() => import("./components/NotFound"));
-const ServerError = lazy(() => import("./components/ServerError"));
-const BookDetails = lazy(() => import("./components/BookDetails"));
-const AllNotesPage = lazy(() => import("./components/AllNotesPage"));
-const AllQuotesPage = lazy(() => import("./components/AllQuotesPage"));
-const AccountPage = lazy(() => import("./components/AccountPage")); 
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ServerError = lazy(() => import("./pages/ServerError"));
+const BookDetails = lazy(() => import("./pages/BookDetails"));
+const AllNotesPage = lazy(() => import("./pages/AllNotesPage"));
+const AllQuotesPage = lazy(() => import("./pages/AllQuotesPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage")); 
 /**
  * Основний макет (Layout) застосунку для авторизованих користувачів.
  * * Забезпечує єдину структуру інтерфейсу: Header -> Main Content -> Footer.
@@ -116,7 +116,7 @@ function App() {
     const token = localStorage.getItem("access_token");
     if (token) {
       try {
-        const profile = await apiAuth.getProfile();
+        const profile = await apiUser.getProfile();
         setUser(profile);
       } catch (error) {
         console.error("Сесія недійснa:", error);

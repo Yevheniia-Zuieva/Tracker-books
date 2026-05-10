@@ -8,7 +8,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom";
 import {
   User, Edit2, LogOut, Camera,
-  Target, Loader2, Save, History, MessageSquare, Quote, Heart, Info, ChevronDown, ChevronUp
+  Target, Loader2, Save, History, MessageSquare, Quote, Heart, Info, ChevronDown, ChevronUp,
+  AlertTriangle, Trash2
 } from "lucide-react";
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '../utils/cropImage';
@@ -38,6 +39,8 @@ const AccountPage = () => {
   const [editForm, setEditForm] = useState({ ...profile });
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [serverStats, setServerStats] = useState({
     all: 0, reading: 0, read: 0, want: 0, fav: 0
@@ -314,6 +317,24 @@ const AccountPage = () => {
 
   const activity = showAllActivity ? analytics?.fullHistory : analytics?.recent;
 
+  // --- ОБРОБНИК ВИДАЛЕННЯ ---
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      await apiUser.deleteProfile();
+      
+      // Після успішного видалення на бекенді — очищаємо локальні дані
+      apiAuth.logout(); 
+      navigate("/login");
+    } catch (error) {
+      console.error("Помилка при видаленні акаунту:", error);
+      alert("Не вдалося видалити акаунт. Спробуйте пізніше.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500 text-left">
       
@@ -513,8 +534,20 @@ const AccountPage = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* --- БЛОК ВИДАЛЕННЯ (DANGEROUS ZONE) --- */}
+            <div className="pt-6 mt-6 border-t border-destructive/10">
+              <p className="text-[10px] font-bold uppercase text-destructive tracking-widest mb-3 px-1">Небезпечна зона</p>
+              <Button 
+                variant="ghost" 
+                className="w-full h-12 rounded-xl text-destructive hover:bg-destructive/5 gap-2 font-medium border border-transparent hover:border-destructive/20" 
+                onClick={() => setShowDeleteModal(true)}
+              >
+                <Trash2 size={18} /> Видалити акаунт
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* МОДАЛЬНЕ ВІКНО КАДРУВАННЯ */}
       {showCropper && (
@@ -549,6 +582,45 @@ const AccountPage = () => {
                 </Button>
                 <Button className="flex-1" onClick={handleSaveCrop}>
                   Застосувати
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <Card className="w-full max-w-md bg-card shadow-2xl border-destructive/20 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto text-destructive">
+                <AlertTriangle size={32} />
+              </div>
+              
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-foreground">Ви впевнені?</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Ця дія є <strong>незворотною</strong>. Ваш профіль, {analytics?.total} книг, нотатки та вся статистика читання будуть видалені назавжди.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button 
+                  variant="destructive" 
+                  className="w-full h-12 rounded-xl font-bold gap-2"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
+                  Так, видалити мій акаунт
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full h-12 rounded-xl font-medium"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                >
+                  Скасувати
                 </Button>
               </div>
             </div>

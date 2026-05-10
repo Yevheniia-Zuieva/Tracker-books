@@ -177,6 +177,10 @@ class BookViewSet(UserFilteredModelViewSet):
             # Фільтрація лише улюблених книг
             queryset = queryset.filter(isFavorite=True)
 
+        is_custom = self.request.query_params.get('isCustom')
+        if is_custom == 'true':
+            queryset = queryset.filter(isCustom=True)
+            
         # --- ЛОГІКА СОРТУВАННЯ ---
         sort_by = self.request.query_params.get("sort")
 
@@ -345,7 +349,7 @@ class QuoteViewSet(UserFilteredModelViewSet):
         return queryset
 
 
-class UserProfileView(generics.RetrieveUpdateAPIView):
+class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     """API View для перегляду та оновлення профілю поточного користувача."""
 
     serializer_class = UserSerializer
@@ -359,6 +363,14 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
         """
         return self.request.user
+    
+    def perform_destroy(self, instance):
+        """
+        Видаляє акаунт користувача.
+        Додано логування перед фактичним видаленням.
+        """
+        logger.info(f"User {instance.id} ({instance.email}) deleted their account.")
+        instance.delete()
 
 
 class ReadingStatsAPIView(APIView):
@@ -477,6 +489,7 @@ class ReadingStatsAPIView(APIView):
                 "reading": all_books.filter(status="reading").count(),
                 "want": all_books.filter(status="want-to-read").count(),
                 "fav": all_books.filter(isFavorite=True).count(),
+                "customCount": all_books.filter(isCustom=True).count(),
                 # Статистика часу
                 "totalReadingTime": time_stats["total_duration_minutes"],
                 "totalReadingSessions": time_stats["total_sessions"],
@@ -501,6 +514,7 @@ def get_stats(request):
         "read": user_books.filter(status="read").count(),
         "want": user_books.filter(status="want-to-read").count(),
         "fav": user_books.filter(isFavorite=True).count(),
+        'customCount': user_books.filter(isCustom=True).count(),
     }
     return Response(data)
 

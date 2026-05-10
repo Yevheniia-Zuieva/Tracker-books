@@ -12,12 +12,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
+} from "../components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Button } from "../components/ui/button";
+import { Checkbox } from "../components/ui/checkbox";
 import {
   BookOpen,
   User,
@@ -463,7 +463,7 @@ export function AuthPage({ onAuth }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Підтвердження</Label>
+                    <Label htmlFor="confirm-password">Підтвердження пароля</Label>
                     <div className="relative group">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#2563eb]" />
                       <Input
