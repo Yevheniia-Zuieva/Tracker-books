@@ -372,7 +372,7 @@ const BookDetails = () => {
                     size={16}
                     className={book.isFavorite ? "fill-current" : ""}
                   />
-                  {book.isFavorite ? "З обраного" : "В обране"}
+                  {book.isFavorite ? "З улюбленого" : "В улюблені"}
                 </Button>
               </div>
             </CardContent>

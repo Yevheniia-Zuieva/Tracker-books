@@ -113,18 +113,23 @@ function App() {
    * @callback
    */
   const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
     if (token) {
       try {
         const profile = await apiUser.getProfile();
         setUser(profile);
       } catch (error) {
         console.error("Сесія недійснa:", error);
-        localStorage.removeItem("access_token");
+        const storages = [localStorage, sessionStorage];
+        storages.forEach(storage => {
+          storage.removeItem("access_token");
+          storage.removeItem("refresh_token");
+          storage.removeItem("remember_me");
+        });
       }
     }
     setIsLoading(false);
-  }, []);
+  }, [setUser, setIsLoading]);
 
   /** Виклик перевірки автентифікації при мотуванні компонента */
   useEffect(() => {
@@ -134,11 +139,10 @@ function App() {
   /**
    * Обробник успішного входу або реєстрації.
    * @param {Object} userData - Отримані дані профілю.
-   * @param {string} token - JWT токен доступу.
    */
-  const handleAuthSuccess = (userData, token) => {
-    localStorage.setItem("access_token", token);
+  const handleAuthSuccess = (userData) => {
     setUser(userData);
+    setIsLoading(false);
   };
 
   /** Обробник виходу з облікового запису*/
