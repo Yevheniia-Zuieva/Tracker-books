@@ -41,6 +41,7 @@ import { apiAuth, apiUser } from "../api/ApiService";
  * @returns {JSX.Element} React-компонент сторінки авторизації.
  */
 export function AuthPage({ onAuth }) {
+  const [rememberMe, setRememberMe] = useState(false);
   /**
  * Стан видимості пароля
  * @type {boolean}
@@ -89,17 +90,17 @@ export function AuthPage({ onAuth }) {
 
     try {
       // Отримання токенів
-      await apiAuth.login(loginData.email, loginData.password);
+      await apiAuth.login(loginData.email, loginData.password, rememberMe);
 
       // Отримання профілю користувача
       const userProfile = await apiUser.getProfile();
 
-      const token = localStorage.getItem("access_token") || "";
+      const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
       onAuth(userProfile, token);
     } catch (error) {
       console.error("Помилка входу:", error);
       if (error.response && error.response.data) {
-        setLoginError("Невірна електронна пошта або пароль.");
+        setLoginError("Неправильна електронна пошта або пароль.");
       } else {
         setLoginError("Помилка з'єднання з сервером. Спробуйте пізніше.");
       }
@@ -197,7 +198,8 @@ export function AuthPage({ onAuth }) {
           if (
             emailErrors.toLowerCase().includes("unique") ||
             emailErrors.toLowerCase().includes("exist") ||
-            emailErrors.toLowerCase().includes("already")
+            emailErrors.toLowerCase().includes("already")||
+            emailErrors.toLowerCase().includes("існує")
           ) {
             errorMessage =
               "Користувач із такою адресою електронної пошти вже зареєстрований. Будь ласка, введіть іншу адресу електронної пошти";
@@ -330,6 +332,8 @@ export function AuthPage({ onAuth }) {
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked)} // Зберігаємо вибір
                         className="border-slate-300 data-[state=checked]:bg-[#2563eb]"
                       />
                       <Label

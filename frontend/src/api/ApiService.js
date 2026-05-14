@@ -37,14 +37,23 @@ export const apiAuth = {
    * @param {string} password - Пароль.
    * @returns {Promise<void>} Зберігає access та refresh токени у localStorage.
    */
-  async login(email, password) {
+  async login(email, password, rememberMe) {
     const response = await axios.post(`${AUTH_URL}/jwt/create/`, {
       email,
       password,
     });
     const { access, refresh } = response.data;
-    localStorage.setItem("access_token", access);
-    localStorage.setItem("refresh_token", refresh);
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("refresh_token");
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem("access_token", access);
+    storage.setItem("refresh_token", refresh);
+    
+    localStorage.setItem("remember_me", JSON.stringify(rememberMe));
+
+    return response.data;
   },
 
   /**
@@ -72,6 +81,8 @@ export const apiAuth = {
   logout() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("refresh_token");
   },
 
   /**

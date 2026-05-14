@@ -51,6 +51,12 @@ class User(AbstractUser):
         related_query_name="user",
     )
 
+    username = models.CharField(
+        max_length=150,
+        unique=False, 
+        help_text="Обов'язкове поле. 150 символів або менше."
+    )
+    
     email = models.EmailField(unique=True)
 
     # Встановлює email як основне поле для входу

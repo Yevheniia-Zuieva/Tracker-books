@@ -134,7 +134,7 @@ DJOSER = {
     "LOGIN_FIELD": "email",
     "USERNAME_CHANGED_EMAIL_CONFIRMATION": True,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
-    "SEND_CONFIRMATION_EMAIL": True,
+    "SEND_CONFIRMATION_EMAIL": False,
     "SET_USERNAME_RETYPE": True,
     "SET_PASSWORD_RETYPE": True,
     "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",  # шаблон посилання для "Забули пароль"
@@ -169,8 +169,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     # Access Token живе 15 хвилин
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    # Refresh Token живе 1 добу
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    # Refresh Token живе 7 днів
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,  # Видавати новий Refresh при кожному оновленні
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
